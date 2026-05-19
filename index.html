@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>مدير الإجازات الذكي - Alsawah</title>
+
+<!-- PWA -->
+<meta name="theme-color" content="#1a3a5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="إجازات Alsawah">
+<script>
+(function(){
+  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#1a3a5c"/><circle cx="256" cy="256" r="220" fill="#2B6CB0"/><text x="256" y="340" font-size="240" text-anchor="middle">🏖️</text></svg>`;
+  const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(svgIcon);
+  const appleLink = document.createElement('link'); appleLink.rel='apple-touch-icon'; appleLink.href=iconUrl; document.head.appendChild(appleLink);
+  const favLink = document.createElement('link'); favLink.rel='icon'; favLink.type='image/svg+xml'; favLink.href=iconUrl; document.head.appendChild(favLink);
+  const manifest = {name:"مدير الإجازات الذكي - Alsawah",short_name:"إجازات Alsawah",description:"نظام إدارة الإجازات الذكي",start_url:"./",display:"standalone",background_color:"#f0f4f8",theme_color:"#1a3a5c",orientation:"portrait-primary",lang:"ar",dir:"rtl",icons:[{src:iconUrl,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+  const mBlob = new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  const mLink = document.createElement('link'); mLink.rel='manifest'; mLink.href=URL.createObjectURL(mBlob); document.head.appendChild(mLink);
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a3a5c;
+  --primary-light: #2B6CB0;
+  --accent: #38b2ac;
+  --accent2: #f6ad55;
+  --danger: #e53e3e;
+  --success: #38a169;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1a202c;
+  --muted: #718096;
+  --border: #e2e8f0;
+  --shadow: 0 4px 20px rgba(26,58,92,0.10);
+  --radius: 16px;
+  --pink: #ed64a6;
+  --pink-light: #fce7f3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  padding: 20px 18px 22px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(26,58,92,0.25);
+  text-align: center;
+}
+.app-header h1 { color:#fff; font-size:1.3rem; font-weight:900; }
+.brand-sub { color:var(--accent2); font-size:1.4rem; font-weight:900; letter-spacing:2px; display:block; margin-top:3px; }
+.subtitle { color:rgba(255,255,255,0.7); font-size:0.72rem; margin-top:5px; }
+.sync-bar { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:7px; font-size:0.68rem; color:rgba(255,255,255,0.85); }
+.sync-dot { width:8px; height:8px; border-radius:50%; background:#fc8181; }
+.sync-dot.ok { background:#68d391; }
+.sync-dot.busy { background:var(--accent2); animation:blink 0.8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card); display:flex; border-top:1px solid var(--border); z-index:200; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
+.nav-btn { flex:1; padding:10px 4px 8px; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'Cairo'; font-size:0.68rem; color:var(--muted); }
+.nav-btn .icon { font-size:1.2rem; }
+.nav-btn.active { color:var(--primary-light); font-weight:700; }
+
+.page { display:none; padding:14px; animation:fadeIn 0.25s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:14px; }
+.form-group { margin-bottom:13px; }
+.form-label { display:block; font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:5px; }
+.form-control { width:100%; padding:11px 13px; border:2px solid var(--border); border-radius:11px; font-family:'Cairo'; font-size:0.88rem; background:#fdfdfd; color:var(--text); }
+.form-control:focus { outline:none; border-color:var(--primary-light); }
+
+.btn { width:100%; padding:13px; border:none; border-radius:11px; font-family:'Cairo'; font-size:0.9rem; font-weight:700; cursor:pointer; }
+.btn-primary { background:linear-gradient(135deg,var(--primary-light),var(--accent)); color:#fff; box-shadow:0 4px 10px rgba(43,108,176,0.3); }
+.btn-success { background:linear-gradient(135deg,#38a169,#48bb78); color:#fff; }
+.btn-outline { background:#f8fafc; border:1px solid var(--border); color:var(--text); font-size:0.78rem; }
+.btn-danger { background:linear-gradient(135deg,#e53e3e,#fc8181); color:#fff; }
+.btn:disabled { opacity:0.55; cursor:not-allowed; }
+.btn-sm { padding:8px 14px; width:auto; font-size:0.75rem; border-radius:9px; }
+
+.summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.stat-card { background:var(--card); border-radius:var(--radius); padding:15px 13px; box-shadow:var(--shadow); border-top:4px solid var(--primary-light); }
+.stat-label { font-size:0.7rem; color:var(--muted); font-weight:600; }
+.stat-value { font-size:1.75rem; font-weight:900; color:var(--primary); }
+
+.sheets-wrap { margin-top:13px; padding-top:13px; border-top:1px dashed var(--border); }
+.sheets-title { font-size:0.82rem; font-weight:700; color:var(--primary); margin-bottom:9px; display:flex; align-items:center; gap:5px; }
+.sheets-title a { margin-right:auto; font-size:0.7rem; color:var(--primary-light); cursor:pointer; text-decoration:underline; background:none; border:none; font-family:'Cairo'; }
+.url-row { display:flex; gap:7px; margin-bottom:9px; }
+.url-input { flex:1; padding:10px 11px; border:2px solid var(--border); border-radius:10px; font-family:monospace; font-size:0.7rem; direction:ltr; text-align:left; }
+.url-input.ok { border-color:var(--success); }
+.url-input.err { border-color:var(--danger); }
+.info-box { border-radius:10px; padding:9px 11px; font-size:0.72rem; line-height:1.6; margin-top:9px; }
+.info-box.ok { background:#f0fff4; border:1px solid #9ae6b4; color:#22543d; }
+.info-box.warn { background:#fffbeb; border:1px solid #fbd38d; color:#744210; }
+.info-box.err { background:#fff5f5; border:1px solid #fed7d7; color:#742a2a; }
+
+.backup-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:13px; padding-top:13px; border-top:1px dashed var(--border); }
+
+.chips { display:flex; gap:7px; flex-wrap:wrap; }
+.chip { padding:6px 12px; border-radius:20px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.73rem; font-weight:600; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.chip.on { background:var(--primary-light); color:#fff; border-color:var(--primary-light); }
+.custom-row { display:none; margin-top:9px; align-items:center; gap:8px; }
+.custom-row.show { display:flex; }
+.custom-row input { width:85px; padding:9px; border:2px solid var(--border); border-radius:9px; font-family:'Cairo'; font-size:0.85rem; text-align:center; }
+
+.section-title { margin:18px 0 9px; font-size:0.95rem; color:var(--primary); border-bottom:2px solid var(--accent); display:inline-block; padding-bottom:2px; }
+.item-card { background:var(--card); padding:13px; border-radius:var(--radius); margin-bottom:9px; display:flex; align-items:center; border-right:4px solid var(--primary-light); box-shadow:var(--shadow); }
+.item-info { flex:1; }
+.item-main { font-weight:700; font-size:0.88rem; }
+.item-sub { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+.del-btn { color:var(--danger); background:none; border:none; cursor:pointer; padding:5px; font-size:1rem; }
+.badge { font-size:0.62rem; padding:2px 8px; border-radius:20px; font-weight:700; margin-top:4px; display:inline-block; }
+.badge.green { background:#c6f6d5; color:#22543d; }
+.badge.yellow { background:#fefcbf; color:#744210; }
+.badge.red { background:#fed7d7; color:#742a2a; }
+.badge.gray { background:#e2e8f0; color:var(--muted); }
+.badge.pink { background:#fce7f3; color:#97266d; }
+
+.toast { position:fixed; bottom:88px; left:50%; transform:translateX(-50%); background:#1a3a5c; color:#fff; padding:10px 20px; border-radius:25px; font-size:0.82rem; display:none; z-index:1000; box-shadow:0 4px 15px rgba(0,0,0,0.2); white-space:nowrap; max-width:90vw; text-align:center; }
+
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:500; overflow-y:auto; padding:30px 16px; }
+.modal-bg.open { display:block; }
+.modal { background:#fff; border-radius:var(--radius); padding:18px; max-width:480px; margin:0 auto; direction:rtl; }
+.modal h3 { color:var(--primary); margin-bottom:13px; font-size:0.95rem; }
+.step { display:flex; gap:9px; margin-bottom:11px; font-size:0.78rem; line-height:1.6; }
+.snum { min-width:22px; height:22px; background:var(--primary-light); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.72rem; flex-shrink:0; }
+.code-block { background:#1a202c; color:#68d391; padding:11px; border-radius:8px; font-size:0.6rem; direction:ltr; text-align:left; overflow-x:auto; margin:7px 0; line-height:1.7; font-family:monospace; white-space:pre; }
+.btn-copy { width:100%; padding:8px; background:#2d3748; color:#68d391; border:none; border-radius:8px; font-family:'Cairo'; font-size:0.73rem; cursor:pointer; margin-bottom:7px; }
+
+.avail-section { display:none; }
+
+.pw-modal-bg { display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9000; align-items:center; justify-content:center; padding:20px; }
+.pw-modal { background:#fff; border-radius:20px; padding:24px; width:100%; max-width:360px; text-align:center; direction:rtl; }
+.pw-modal h2 { color:var(--primary); font-size:1.2rem; margin-bottom:6px; }
+.pw-modal p { color:var(--muted); font-size:0.78rem; margin-bottom:18px; }
+.pw-input-wrap { position:relative; margin-bottom:14px; }
+.pw-input { width:100%; padding:13px 44px 13px 13px; border:2px solid var(--border); border-radius:12px; font-family:'Cairo'; font-size:1.1rem; text-align:center; letter-spacing:4px; }
+.pw-input:focus { outline:none; border-color:var(--primary-light); }
+.pw-toggle { position:absolute; left:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--muted); }
+.pw-error { color:var(--danger); font-size:0.75rem; margin-bottom:10px; display:none; }
+.pw-logo { font-size:2.5rem; margin-bottom:10px; }
+
+.settings-section { margin-bottom:18px; }
+.settings-section-title { font-size:0.85rem; font-weight:700; color:var(--primary); margin-bottom:10px; padding-bottom:5px; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:6px; }
+
+.month-stats-grid { display:grid; gap:9px; }
+.month-stat-row { background:var(--card); border-radius:12px; padding:11px 14px; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:space-between; border-right:3px solid var(--primary-light); }
+.month-stat-label { font-size:0.8rem; font-weight:700; color:var(--primary); }
+.month-stat-count { font-size:0.75rem; color:var(--muted); display:flex; gap:10px; }
+.month-count-badge { padding:2px 9px; border-radius:12px; font-weight:700; font-size:0.7rem; }
+.mc-annual { background:#bee3f8; color:#1a365d; }
+.mc-badal { background:#c6f6d5; color:#22543d; }
+.mc-total { background:#e9d8fd; color:#44337a; }
+
+.shift-select { margin-top:8px; }
+.shift-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+.shift-chip { padding:5px 12px; border-radius:18px; border:2px solid var(--pink); background:var(--pink-light); font-family:'Cairo'; font-size:0.72rem; font-weight:700; cursor:pointer; color:var(--pink); transition:all 0.15s; }
+.shift-chip.on { background:var(--pink); color:#fff; border-color:var(--pink); }
+.shift-none-chip { padding:5px 12px; border-radius:18px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.72rem; font-weight:600; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.shift-none-chip.on { background:var(--muted); color:#fff; border-color:var(--muted); }
+
+.locked-row { position:relative; }
+
+.auto-sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.auto-sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.year-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:600; overflow-y:auto; padding:24px 14px; }
+.year-modal-bg.open { display:block; }
+.year-modal { background:#fff; border-radius:var(--radius); padding:18px; max-width:480px; margin:0 auto; direction:rtl; }
+.year-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.year-modal-header h3 { color:var(--primary); font-size:1rem; }
+.year-tab-list { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.year-tab { padding:7px 16px; border-radius:20px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.year-tab.active { background:var(--primary-light); color:#fff; border-color:var(--primary-light); }
+.year-data-view { animation:fadeIn 0.2s ease; }
+.year-summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:14px; }
+.year-stat { background:var(--bg); border-radius:12px; padding:11px 9px; text-align:center; border-top:3px solid var(--primary-light); }
+.year-stat-val { font-size:1.4rem; font-weight:900; color:var(--primary); }
+.year-stat-lbl { font-size:0.65rem; color:var(--muted); margin-top:2px; }
+.archive-badge { background:var(--accent2); color:#fff; font-size:0.6rem; padding:2px 8px; border-radius:10px; font-weight:700; margin-right:5px; }
+.current-year-badge { display:inline-block; background:rgba(255,255,255,0.2); color:#fff; font-size:0.72rem; padding:3px 10px; border-radius:12px; margin-top:6px; font-weight:700; letter-spacing:1px; }
+.archive-notice { background:#fffbeb; border:1px solid #fbd38d; border-radius:10px; padding:10px 12px; font-size:0.75rem; color:#744210; margin-bottom:12px; line-height:1.7; }
+.btn-archive { background:linear-gradient(135deg,var(--accent2),#ed8936); color:#fff; border:none; border-radius:11px; padding:11px; width:100%; font-family:'Cairo'; font-size:0.88rem; font-weight:700; cursor:pointer; margin-top:8px; }
+.new-year-section { margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); }
+</style>
+</head>
+<body>
+
+<div class="pw-modal-bg" id="pwGate">
+  <div class="pw-modal">
+    <div class="pw-logo">🔐</div>
+    <h2>Alsawah</h2>
+    <p>أدخل كلمة المرور للدخول</p>
+    <div class="pw-input-wrap">
+      <input type="password" class="pw-input" id="pwInput" placeholder="••••••" maxlength="20" onkeydown="if(event.key==='Enter')checkPw()">
+      <button class="pw-toggle" onclick="togglePwVis('pwInput',this)">👁️</button>
+    </div>
+    <div class="pw-error" id="pwError">❌ كلمة المرور غير صحيحة</div>
+    <button class="btn btn-primary" onclick="checkPw()">🔓 دخول</button>
+  </div>
+</div>
+
+<div class="pw-modal-bg" id="urlPwModal" style="display:none;">
+  <div class="pw-modal">
+    <div class="pw-logo">🔗</div>
+    <h2>تأكيد تعديل الرابط</h2>
+    <p>أدخل كلمة المرور لتعديل رابط Google Sheets</p>
+    <div class="pw-input-wrap">
+      <input type="password" class="pw-input" id="urlPwInput" placeholder="••••••" maxlength="20" onkeydown="if(event.key==='Enter')confirmUrlAction()">
+      <button class="pw-toggle" onclick="togglePwVis('urlPwInput',this)">👁️</button>
+    </div>
+    <div class="pw-error" id="urlPwError">❌ كلمة المرور غير صحيحة</div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmUrlAction()">✅ تأكيد</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeUrlPwModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-header">
+  <h1>مدير الإجازات الذكي</h1>
+  <span class="brand-sub">Alsawah</span>
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;">
+    <span class="current-year-badge" id="headerYearBadge">📅 ...</span>
+    <button onclick="openYearsModal()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:#fff;font-family:'Cairo';font-size:0.68rem;padding:3px 10px;border-radius:12px;cursor:pointer;">📚 السنوات السابقة</button>
+  </div>
+  <p class="subtitle">رصيدك محفوظ بأمان على هاتفك</p>
+  <button id="pwaInstallBtn" onclick="installPWA()" style="display:none;margin:6px auto 0;padding:6px 16px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);color:#fff;font-family:'Cairo';font-size:0.72rem;font-weight:700;border-radius:20px;cursor:pointer;">📲 تثبيت التطبيق</button>
+  <div class="sync-bar">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncTxt">غير متصل بـ Google Sheets</span>
+  </div>
+</div>
+
+<div id="page-home" class="page active">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <label style="font-weight:700;font-size:0.88rem;">🎯 الرصيد السنوي:</label>
+      <input type="number" id="totalAnnual" style="width:70px;text-align:center;padding:8px;border-radius:8px;border:1px solid var(--border);font-family:'Cairo';" onchange="updateAnnual()">
+    </div>
+
+    <div class="sheets-wrap">
+      <div class="sheets-title">
+        <span>📊</span> مزامنة Google Sheets
+        <button onclick="openModal()" style="margin-right:auto;background:none;border:none;color:var(--primary-light);font-size:0.7rem;cursor:pointer;font-family:'Cairo';text-decoration:underline;">كيفية الإعداد؟</button>
+      </div>
+      <div class="url-row locked-row">
+        <input type="url" id="sheetsUrl" class="url-input" placeholder="الصق رابط Apps Script Web App هنا..." readonly style="background:#f8fafc;color:var(--muted);">
+        <button class="btn btn-primary btn-sm" onclick="requestUrlEdit()">✏️ تعديل</button>
+      </div>
+      <button class="btn btn-success" id="syncBtn" onclick="manualSync()">🔄 مزامنة يدوية الآن</button>
+      <div id="infoBox" style="display:none;" class="info-box"></div>
+    </div>
+
+    <div class="backup-row">
+      <button class="btn btn-outline" onclick="exportData()">📤 حفظ نسخة</button>
+      <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 استعادة</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+    </div>
+
+    <div class="auto-sync-indicator" id="autoSyncIndicator" style="margin-top:8px;">
+      <div class="auto-sync-dot" id="autoSyncDot"></div>
+      <span id="autoSyncText">جاهز للمزامنة</span>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="stat-card">
+      <div class="stat-label">المتبقي سنوي</div>
+      <div class="stat-value" id="s-remaining">0</div>
+    </div>
+    <div class="stat-card" style="border-top-color:var(--accent)">
+      <div class="stat-label">بدلات راحة متاحة</div>
+      <div class="stat-value" id="s-badal">0</div>
+    </div>
+  </div>
+
+  <div class="avail-section" id="availSection">
+    <div class="section-title">🟢 بدلات راحة متاحة الآن</div>
+    <div id="availList"></div>
+  </div>
+</div>
+
+<div id="page-add-leave" class="page">
+  <div class="card">
+    <h3 style="margin-bottom:14px;font-size:1rem;">🌴 إضافة إجازة</h3>
+    <div class="form-group"><label class="form-label">تاريخ الإجازة:</label><input type="date" id="lDate" class="form-control" onchange="updateRestOpts()"></div>
+    <div class="form-group"><label class="form-label">نوع الإجازة:</label><select id="lType" class="form-control" onchange="toggleRestSel()"><option value="سنوي">🌴 إجازة سنوية</option><option value="بدل راحة">🔄 بدل راحة</option></select></div>
+    <div id="restSelGroup" class="form-group" style="display:none"><label class="form-label">اختر يوم العمل المقابل:</label><select id="lRestRef" class="form-control"></select></div>
+    <div class="form-group"><label class="form-label">عدد الأيام:</label><input type="number" id="lDays" class="form-control" value="1" step="0.5"></div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:6px;">🌸 الوردية <span style="font-size:0.68rem;color:var(--muted);font-weight:400;">(اختياري)</span></label>
+      <div class="shift-chips" id="shiftChips">
+        <div class="shift-none-chip on" data-val="" onclick="pickShift(this)">بدون</div>
+        <div class="shift-chip" data-val="أولى" onclick="pickShift(this)">أولى</div>
+        <div class="shift-chip" data-val="ثانية" onclick="pickShift(this)">ثانية</div>
+        <div class="shift-chip" data-val="ثالثة" onclick="pickShift(this)">ثالثة</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addLeave()">✅ حفظ الإجازة</button>
+  </div>
+</div>
+
+<div id="page-add-rest" class="page">
+  <div class="card">
+    <h3 style="margin-bottom:14px;font-size:1rem;">🔄 إضافة يوم عمل (بدل راحة)</h3>
+    <div class="form-group"><label class="form-label">تاريخ يوم العمل:</label><input type="date" id="rDate" class="form-control"></div>
+    <div class="form-group"><label class="form-label">عدد الأيام:</label><input type="number" id="rDays" class="form-control" value="1" step="0.5"></div>
+    <div class="form-group">
+      <label class="form-label">📅 صالح لمدة (ممكن تاخده إجازة خلال):</label>
+      <div class="chips" id="chips">
+        <div class="chip on" data-days="30" onclick="pickChip(this)">شهر</div>
+        <div class="chip" data-days="14" onclick="pickChip(this)">أسبوعين</div>
+        <div class="chip" data-days="7" onclick="pickChip(this)">أسبوع</div>
+        <div class="chip" data-days="0" onclick="pickChip(this)">مخصص ✏️</div>
+      </div>
+      <div class="custom-row" id="customRow"><input type="number" id="customDays" placeholder="عدد الأيام" min="1"><span style="font-size:0.8rem;color:var(--muted);">يوم</span></div>
+    </div>
+    <div class="form-group"><label class="form-label">ملاحظة (اختياري):</label><input type="text" id="rNote" class="form-control" placeholder="مثال: مناوبة جمعة"></div>
+    <button class="btn btn-primary" onclick="addRest()">✅ حفظ يوم العمل</button>
+  </div>
+</div>
+
+<div id="page-history" class="page">
+  <h3 style="margin-bottom:14px;font-size:1rem;">📋 سجل التحركات</h3>
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-weight:700;font-size:0.88rem;color:var(--primary);margin-bottom:12px;">📅 إحصاء الإجازات الشهري</div>
+    <div class="month-stats-grid" id="monthStatsGrid"><p style="color:var(--muted);font-size:0.78rem;">لا توجد بيانات بعد</p></div>
+  </div>
+  <div class="section-title">📋 سجل الإجازات</div><div id="hist-all-leaves"></div>
+  <div class="section-title">🔄 بدلات راحة متاحة</div><div id="hist-rest-avail"></div>
+  <div class="section-title" id="hist-rest-used-title" style="display:none">✔️ بدلات راحة مستخدمة / منتهية</div><div id="hist-rest-used"></div>
+</div>
+
+<div id="page-settings" class="page">
+  <div class="card">
+    <div class="settings-section">
+      <div class="settings-section-title">🔑 تغيير كلمة المرور</div>
+      <div class="form-group"><label class="form-label">كلمة المرور الحالية:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="oldPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('oldPw',this)">👁️</button></div></div>
+      <div class="form-group"><label class="form-label">كلمة المرور الجديدة:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="newPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('newPw',this)">👁️</button></div></div>
+      <div class="form-group"><label class="form-label">تأكيد كلمة المرور الجديدة:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="confirmPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('confirmPw',this)">👁️</button></div></div>
+      <button class="btn btn-primary" onclick="changePw()">🔒 تغيير كلمة المرور</button>
+    </div>
+
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">🔄 المزامنة التلقائية</div>
+      <label style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="autoSyncToggle" checked onchange="toggleAutoSync()">
+        <span>مزامنة تلقائية عند التعديل أو الحذف فقط</span>
+      </label>
+      <p style="font-size:0.7rem;color:var(--muted);margin-top:6px;line-height:1.6;">📌 المزامنة تشتغل فقط لما تضيف أو تحذف بيانات — مش بتشتغل بشكل دوري</p>
+    </div>
+
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">📊 رابط Google Sheets</div>
+      <div class="form-group"><label class="form-label">الرابط الحالي:</label><input type="url" id="sheetsUrlSettings" class="form-control" placeholder="الصق رابط Apps Script Web App..." style="font-size:0.72rem;direction:ltr;text-align:left;"></div>
+      <button class="btn btn-success" onclick="requestSettingsUrlSave()">💾 حفظ الرابط</button>
+      <button class="btn btn-success" id="syncBtn2" style="margin-top:8px;" onclick="manualSync()">🔄 مزامنة يدوية الآن</button>
+      <div id="infoBox2" style="display:none;margin-top:9px;" class="info-box"></div>
+    </div>
+
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">💾 النسخ الاحتياطي</div>
+      <div class="info-box ok" style="margin-bottom:10px;font-size:0.72rem;">
+        🛡️ <strong>وضع الحماية المزدوجة مفعّل:</strong> البيانات محفوظة في IndexedDB (أقوى) + localStorage كنسخة احتياطية تلقائية. مسح الكاش العادي لن يحذف بياناتك.
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">آخر نسخة خارجية: <span id="lastBackupTime">لم يتم بعد</span></div>
+      <div class="backup-row">
+        <button class="btn btn-outline" onclick="exportData()">📤 حفظ نسخة محلية</button>
+        <button class="btn btn-outline" onclick="document.getElementById('importFile2').click()">📥 استعادة نسخة</button>
+        <input type="file" id="importFile2" style="display:none" accept=".json" onchange="importData(event)">
+      </div>
+      <button class="btn btn-outline" style="margin-top:9px;width:100%;" onclick="syncAllArchive()">📚 مزامنة كل السنوات السابقة مع الشيت</button>
+    </div>
+
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">📖 تعليمات Google Sheets</div>
+      <button class="btn btn-outline" onclick="openModal()">📋 عرض تعليمات الإعداد</button>
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);">
+      <button class="btn btn-danger" onclick="lockApp()">🔒 قفل التطبيق</button>
+    </div>
+  </div>
+</div>
+
+<div class="year-modal-bg" id="yearsModal">
+  <div class="year-modal">
+    <div class="year-modal-header"><h3>📚 أرشيف السنوات</h3><button onclick="closeYearsModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);">✕</button></div>
+    <div class="year-tab-list" id="yearTabList"></div>
+    <div class="year-data-view" id="yearDataView"></div>
+    <div class="new-year-section" id="newYearSection">
+      <div class="archive-notice">💡 <strong>أرشفة السنة الحالية:</strong> لما تبدأ سنة جديدة، اضغط الزرار ده. السنة الحالية هتتحفظ في الأرشيف وتقدر ترجعلها في أي وقت، وهيبدأ لك سجل جديد فاضي.</div>
+      <button class="btn-archive" onclick="archiveCurrentYear()">📦 أرشفة <span id="archiveBtnYear"></span> وبدء سنة جديدة</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="go('home',this)"><span class="icon">🏠</span><span>الرئيسية</span></button>
+  <button class="nav-btn" onclick="go('add-leave',this)"><span class="icon">➕</span><span>إجازة</span></button>
+  <button class="nav-btn" onclick="go('add-rest',this)"><span class="icon">🔄</span><span>بدل راحة</span></button>
+  <button class="nav-btn" onclick="go('history',this)"><span class="icon">📋</span><span>السجل</span></button>
+  <button class="nav-btn" onclick="go('settings',this)"><span class="icon">⚙️</span><span>الإعدادات</span></button>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>📊 ربط Google Sheets — خطوات سريعة</h3>
+    <div class="step"><div class="snum">1</div><div>افتح <strong>Google Sheets</strong> وأنشئ ملف جديد</div></div>
+    <div class="step"><div class="snum">2</div><div>من القائمة: <strong>Extensions ← Apps Script</strong></div></div>
+    <div class="step"><div class="snum">3</div><div>احذف الكود الموجود والصق الكود ده:</div></div>
+    <button class="btn-copy" onclick="copyCode()">📋 نسخ الكود</button>
+    <div class="code-block" id="codeBlock">function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
+
+function handleRequest(e) {
+  try {
+    var action   = (e.parameter && e.parameter.action) || 'sync';
+    var yr       = (e.parameter && e.parameter.year)   || new Date().getFullYear().toString();
+    var callback = (e.parameter && e.parameter.callback) || '';
+    var ss       = SpreadsheetApp.getActiveSpreadsheet();
+    var result;
+
+    if (action === 'ping') {
+      result = {status:'ok', msg:'connected'};
+    } else if (action === 'fetch') {
+      var data = loadSheets(ss, yr);
+      result = {status:'ok', data: data};
+    } else if (action === 'sync') {
+      var raw  = (e.parameter && e.parameter.data) || (e.postData && e.postData.contents) || '{}';
+      var data = JSON.parse(raw.indexOf('%') !== -1 ? decodeURIComponent(raw) : raw);
+      saveSheets(ss, yr, data);
+      result = {status:'ok', saved: (data.leaves||[]).length + (data.rests||[]).length};
+    } else if (action === 'archive') {
+      var raw  = (e.parameter && e.parameter.data) || '{}';
+      var data = JSON.parse(raw.indexOf('%') !== -1 ? decodeURIComponent(raw) : raw);
+      saveArchiveSheet(ss, yr, data);
+      result = {status:'ok', archived: yr};
+    } else {
+      result = {status:'error', msg:'unknown action'};
+    }
+
+    return respond(result, callback);
+  } catch(err) {
+    return respond({status:'error', msg: err.toString()}, '');
+  }
+}
+
+function loadSheets(ss, yr) {
+  var data = { year: yr, leaves: [], rests: [], totalAnnual: 21, lastModified: 0 };
+  var lSheet = ss.getSheetByName('LeaveData_'+yr) || ss.getSheetByName('الإجازات_'+yr) || ss.getSheetByName('اجازات_'+yr);
+  if (lSheet) {
+    var vals = lSheet.getDataRange().getValues();
+    for (var i = 1; i < vals.length; i++) {
+      if (vals[i][0]) {
+        data.leaves.push({
+          id: parseInt(vals[i][0]) || 0,
+          date: vals[i][1] || '',
+          type: vals[i][2] || 'سنوي',
+          days: String(vals[i][3] || '1'),
+          restRef: vals[i][4] || null,
+          shift: vals[i][5] || null
+        });
+      }
+    }
+  }
+  var rSheet = ss.getSheetByName('RestData_'+yr) || ss.getSheetByName('بدلات_'+yr) || ss.getSheetByName('راحة_'+yr);
+  if (rSheet) {
+    var rvals = rSheet.getDataRange().getValues();
+    for (var j = 1; j < rvals.length; j++) {
+      if (rvals[j][0]) {
+        data.rests.push({
+          id: parseInt(rvals[j][0]) || 0,
+          date: rvals[j][1] || '',
+          days: String(rvals[j][2] || '1'),
+          validDays: parseInt(rvals[j][3]) || 30,
+          note: rvals[j][4] || ''
+        });
+      }
+    }
+  }
+  var sSheet = ss.getSheetByName('Settings_'+yr) || ss.getSheetByName('اعدادات_'+yr);
+  if (sSheet) {
+    var svals = sSheet.getDataRange().getValues();
+    for (var k = 0; k < svals.length; k++) {
+      if (svals[k][0] && svals[k][0].indexOf && svals[k][0].indexOf('رصيد') !== -1) data.totalAnnual = parseFloat(svals[k][1]) || 21;
+      if (svals[k][0] === 'lastModified') data.lastModified = parseInt(svals[k][1]) || 0;
+    }
+  }
+  return data;
+}
+
+function saveSheets(ss, yr, data) {
+  var lSheet = ss.getSheetByName('LeaveData_'+yr) || ss.getSheetByName('الإجازات_'+yr) || ss.getSheetByName('اجازات_'+yr) || ss.insertSheet('LeaveData_'+yr);
+  lSheet.clearContents();
+  lSheet.getRange(1,1,1,7).setValues([['ID','Date','Type','Days','RestRef','Shift','Timestamp']]);
+  (data.leaves || []).forEach(function(l) {
+    lSheet.appendRow([l.id || Date.now(), l.date || '', l.type || 'سنوي', l.days || '1', l.restRef || '', l.shift || '', new Date(l.id || Date.now()).toLocaleString('ar-EG')]);
+  });
+
+  var rSheet = ss.getSheetByName('RestData_'+yr) || ss.getSheetByName('بدلات_'+yr) || ss.getSheetByName('راحة_'+yr) || ss.insertSheet('RestData_'+yr);
+  rSheet.clearContents();
+  rSheet.getRange(1,1,1,6).setValues([['ID','Date','Days','ValidDays','Note','Timestamp']]);
+  (data.rests || []).forEach(function(r) {
+    rSheet.appendRow([r.id || Date.now(), r.date || '', r.days || '1', r.validDays || 30, r.note || '', new Date(r.id || Date.now()).toLocaleString('ar-EG')]);
+  });
+
+  var sSheet = ss.getSheetByName('Settings_'+yr) || ss.getSheetByName('اعدادات_'+yr) || ss.insertSheet('Settings_'+yr);
+  sSheet.clearContents();
+  sSheet.getRange(1,1,4,2).setValues([
+    ['TotalAnnual', data.totalAnnual || 21],
+    ['Year', yr],
+    ['LastSync', new Date().toLocaleString('ar-EG')],
+    ['lastModified', data.lastModified || Date.now()]
+  ]);
+}
+
+function saveArchiveSheet(ss, yr, data) {
+  // شيت مستقل باسم Archive_YYYY يحفظ البيانات القديمة بشكل دائم
+  var sheetName = 'Archive_' + yr;
+  var sh = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+  sh.clearContents();
+
+  // Header
+  sh.getRange(1,1,1,2).setValues([['السنة', yr]]);
+  sh.getRange(2,1,1,2).setValues([['الرصيد السنوي', data.totalAnnual || 21]]);
+  sh.getRange(3,1,1,2).setValues([['تاريخ الأرشفة', new Date().toLocaleString('ar-EG')]]);
+  sh.getRange(4,1,1,2).setValues([['lastModified', data.lastModified || 0]]);
+
+  // Leaves
+  sh.getRange(6,1,1,7).setValues([['--- الإجازات ---','','','','','','']]);
+  sh.getRange(7,1,1,7).setValues([['ID','Date','Type','Days','RestRef','Shift','Timestamp']]);
+  var row = 8;
+  (data.leaves || []).forEach(function(l) {
+    sh.getRange(row++,1,1,7).setValues([[
+      l.id || '', l.date || '', l.type || 'سنوي',
+      l.days || '1', l.restRef || '', l.shift || '',
+      new Date(l.id || Date.now()).toLocaleString('ar-EG')
+    ]]);
+  });
+
+  // Rests
+  row++;
+  sh.getRange(row,1,1,5).setValues([['--- بدلات الراحة ---','','','','']]);
+  row++;
+  sh.getRange(row++,1,1,5).setValues([['ID','Date','Days','ValidDays','Note']]);
+  (data.rests || []).forEach(function(r) {
+    sh.getRange(row++,1,1,5).setValues([[
+      r.id || '', r.date || '', r.days || '1',
+      r.validDays || 30, r.note || ''
+    ]]);
+  });
+}
+
+function respond(obj, callback) {
+  var json = JSON.stringify(obj);
+  // لو في callback → JSONP (بيحل CORS تلقائياً)
+  if (callback) {
+    return ContentService.createTextOutput(callback + '(' + json + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+    <div class="step"><div class="snum">4</div><div>اضغط <strong>Deploy ← New deployment</strong></div></div>
+    <div class="step"><div class="snum">5</div><div>اختر Type: <strong>Web app</strong> ← Execute as: <strong>Me</strong> ← Who has access: <strong>Anyone</strong></div></div>
+    <div class="step"><div class="snum">6</div><div>اضغط <strong>Deploy</strong> ← وافق على الصلاحيات ← انسخ رابط <strong>Web app URL</strong></div></div>
+    <div class="step"><div class="snum">7</div><div>الصق الرابط في صفحة <strong>الإعدادات</strong> ← رابط Google Sheets</div></div>
+    <div class="info-box warn" style="margin-top:10px;">⚠️ <strong>مهم:</strong> الكود بيستخدم doGet وdoPost معاً. البيانات محفوظة على هاتفك والشيت نسخة احتياطية.</div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="closeModal()">✅ فهمت، إغلاق</button>
+  </div>
+</div>
+
+<script>
+var DEFAULT_PW = '2000';
+var PW_KEY = 'alsawah_pw_hash';
+var URL_KEY = 'sheets_url';
+var SYNC_KEY = 'last_sync';
+var ARCHIVE_KEY = 'alsawah_archive';
+var CURRENT_YEAR = new Date().getFullYear().toString();
+var DATA_KEY = 'v_data_' + CURRENT_YEAR;
+var AUTO_SYNC_ENABLED = true;
+
+// ═══════════════════════════════════════════════════
+//  IndexedDB Layer — أقوى من localStorage في الحفظ
+// ═══════════════════════════════════════════════════
+var IDB_NAME = 'alsawah_db';
+var IDB_STORE = 'kv';
+var _idb = null;
+
+function idbOpen(cb) {
+  if (_idb) { cb(_idb); return; }
+  var req = indexedDB.open(IDB_NAME, 1);
+  req.onupgradeneeded = function(e) {
+    e.target.result.createObjectStore(IDB_STORE);
+  };
+  req.onsuccess = function(e) {
+    _idb = e.target.result;
+    cb(_idb);
+  };
+  req.onerror = function() { cb(null); };
+}
+
+function idbSet(key, value, cb) {
+  // دايماً احفظ في localStorage كـ fallback
+  try { localStorage.setItem(key, value); } catch(e) {}
+  idbOpen(function(db) {
+    if (!db) { if (cb) cb(); return; }
+    var tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = function() { if (cb) cb(); };
+    tx.onerror = function() { if (cb) cb(); };
+  });
+}
+
+function idbGet(key, cb) {
+  idbOpen(function(db) {
+    if (!db) {
+      // fallback على localStorage
+      cb(localStorage.getItem(key));
+      return;
+    }
+    var tx = db.transaction(IDB_STORE, 'readonly');
+    var req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = function() {
+      var val = req.result;
+      if (val === undefined || val === null) {
+        // الـ IDB فاضي — حاول من localStorage (للمستخدمين القدامى)
+        val = localStorage.getItem(key);
+        if (val) {
+          // هجّر البيانات القديمة للـ IDB
+          idbSet(key, val);
+        }
+      }
+      cb(val || null);
+    };
+    req.onerror = function() { cb(localStorage.getItem(key)); };
+  });
+}
+
+function idbDel(key, cb) {
+  try { localStorage.removeItem(key); } catch(e) {}
+  idbOpen(function(db) {
+    if (!db) { if (cb) cb(); return; }
+    var tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = function() { if (cb) cb(); };
+    tx.onerror = function() { if (cb) cb(); };
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  التصدير التلقائي — نسخة احتياطية بعد كل تعديل
+// ═══════════════════════════════════════════════════
+var BACKUP_REMINDER_KEY = 'alsawah_last_backup_remind';
+var _pendingAutoBackup = false;
+
+function checkBackupReminder() {
+  var last = localStorage.getItem(BACKUP_REMINDER_KEY);
+  var now = Date.now();
+  var sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (!last || (now - parseInt(last)) > sevenDays) {
+    setTimeout(showBackupBanner, 1500);
+  }
+}
+
+function showBackupBanner() {
+  // لو في banner قديم، شيله
+  var old = document.getElementById('backupBanner');
+  if (old) old.remove();
+
+  var banner = document.createElement('div');
+  banner.id = 'backupBanner';
+  banner.style.cssText = [
+    'position:fixed','bottom:70px','left:10px','right:10px',
+    'background:linear-gradient(135deg,#1a3a5c,#2B6CB0)',
+    'color:#fff','border-radius:14px','padding:14px 16px',
+    'box-shadow:0 6px 24px rgba(0,0,0,0.25)',
+    'z-index:9999','font-family:Cairo,sans-serif',
+    'animation:slideUp 0.3s ease'
+  ].join(';');
+  banner.innerHTML =
+    '<div style="font-weight:900;font-size:0.9rem;margin-bottom:6px;">💾 تذكير: خد نسخة احتياطية!</div>' +
+    '<div style="font-size:0.75rem;opacity:0.88;margin-bottom:10px;line-height:1.5;">حفظ نسخة على هاتفك بيحمي بياناتك لو اتمسح الكاش أو أعدت تثبيت التطبيق.</div>' +
+    '<div style="display:flex;gap:8px;">' +
+    '<button onclick="doAutoBackup()" style="flex:1;padding:9px;border:none;border-radius:9px;background:#f6ad55;color:#1a202c;font-family:Cairo;font-weight:700;font-size:0.8rem;cursor:pointer;">📤 حفظ الآن</button>' +
+    '<button onclick="dismissBackupBanner()" style="padding:9px 14px;border:1px solid rgba(255,255,255,0.4);border-radius:9px;background:transparent;color:#fff;font-family:Cairo;font-size:0.8rem;cursor:pointer;">لاحقاً</button>' +
+    '</div>';
+
+  // أضف animation
+  var styleTag = document.getElementById('backupBannerStyle');
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'backupBannerStyle';
+    styleTag.textContent = '@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}';
+    document.head.appendChild(styleTag);
+  }
+  document.body.appendChild(banner);
+}
+
+function dismissBackupBanner() {
+  var b = document.getElementById('backupBanner');
+  if (b) b.remove();
+  // لو ضغط "لاحقاً" نفس الرسالة ترجع بعد يومين مش 7
+  localStorage.setItem(BACKUP_REMINDER_KEY, (Date.now() - 5 * 24 * 60 * 60 * 1000).toString());
+}
+
+function doAutoBackup() {
+  var b = document.getElementById('backupBanner');
+  if (b) b.remove();
+  localStorage.setItem(BACKUP_REMINDER_KEY, Date.now().toString());
+  exportData();
+}
+
+// تصدير تلقائي بعد كل حفظ (مرة واحدة في الجلسة لو في بيانات)
+var _autoBackupDoneThisSession = false;
+function offerQuickBackup() {
+  if (_autoBackupDoneThisSession) return;
+  _autoBackupDoneThisSession = true;
+  var t = document.getElementById('toast');
+  if (t) {
+    var msg = '✅ تم الحفظ \u00a0<button onclick="exportData()" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-family:Cairo,sans-serif;font-size:0.75rem;padding:3px 10px;border-radius:8px;cursor:pointer;margin-right:4px;">📤 نسخة احتياطية</button>';
+    toast(msg, true);
+    // امدد وقت الظهور
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.style.display='none'; t.innerHTML=''; }, 5000);
+  }
+}
+
+function hashPw(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return 'h' + Math.abs(h).toString(36) + s.length;
+}
+
+var S = { totalAnnual: 21, leaves: [], rests: [], lastModified: 0 };
+
+function init() {
+  if (!localStorage.getItem(PW_KEY)) localStorage.setItem(PW_KEY, hashPw(DEFAULT_PW));
+  // هجّر البيانات القديمة من localStorage إلى IDB
+  var oldData = localStorage.getItem('v_data');
+  if (oldData && !localStorage.getItem(DATA_KEY)) localStorage.setItem(DATA_KEY, oldData);
+  loadState();
+  updateHeaderYear();
+  // On app open: check server for newer data (bidirectional)
+  if (localStorage.getItem(URL_KEY)) {
+    setTimeout(function(){ fetchAndMerge(); }, 600);
+  }
+  // On tab/app resume: check for updates from other devices
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && localStorage.getItem(URL_KEY)) {
+      fetchAndMerge();
+    }
+  });
+}
+
+function updateHeaderYear() {
+  var el = document.getElementById('headerYearBadge');
+  if (el) el.textContent = '📅 سنة ' + CURRENT_YEAR;
+  var archBtn = document.getElementById('archiveBtnYear');
+  if (archBtn) archBtn.textContent = CURRENT_YEAR;
+}
+
+function loadState() {
+  idbGet(DATA_KEY, function(saved) {
+    if (saved) { try { S = JSON.parse(saved); } catch(e){} }
+    document.getElementById('totalAnnual').value = S.totalAnnual;
+    var url = localStorage.getItem(URL_KEY) || '';
+    document.getElementById('sheetsUrl').value = url;
+    document.getElementById('sheetsUrlSettings').value = url;
+    if (url) {
+      document.getElementById('sheetsUrl').classList.add('ok');
+      var lt = localStorage.getItem(SYNC_KEY);
+      setDot('ok', lt ? 'آخر مزامنة: ' + lt : 'الرابط محفوظ');
+    }
+    render();
+    checkBackupReminder();
+    // عرض وقت آخر نسخة
+    var lt = localStorage.getItem(BACKUP_REMINDER_KEY);
+    var el = document.getElementById('lastBackupTime');
+    if (el && lt) {
+      var d = new Date(parseInt(lt));
+      el.textContent = d.toLocaleDateString('ar-EG') + ' - ' + d.toLocaleTimeString('ar-EG', {hour:'2-digit',minute:'2-digit'});
+    }
+  });
+}
+
+function checkPw() {
+  var val = document.getElementById('pwInput').value;
+  var stored = localStorage.getItem(PW_KEY) || hashPw(DEFAULT_PW);
+  if (hashPw(val) === stored) {
+    document.getElementById('pwGate').style.display = 'none';
+    document.getElementById('pwError').style.display = 'none';
+    loadState();
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+function lockApp() {
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  document.getElementById('pwGate').style.display = 'flex';
+}
+
+function changePw() {
+  var oldVal = document.getElementById('oldPw').value;
+  var newVal = document.getElementById('newPw').value;
+  var confVal = document.getElementById('confirmPw').value;
+  var stored = localStorage.getItem(PW_KEY) || hashPw(DEFAULT_PW);
+  if (hashPw(oldVal) !== stored) { toast('❌ كلمة المرور الحالية غير صحيحة'); return; }
+  if (!newVal || newVal.length < 3) { toast('❌ كلمة المرور الجديدة قصيرة جداً'); return; }
+  if (newVal !== confVal) { toast('❌ غير متطابقين'); return; }
+  localStorage.setItem(PW_KEY, hashPw(newVal));
+  document.getElementById('oldPw').value = '';
+  document.getElementById('newPw').value = '';
+  document.getElementById('confirmPw').value = '';
+  toast('✅ تم تغيير كلمة المرور بنجاح');
+}
+
+function togglePwVis(id, btn) {
+  var inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+var _pendingUrlAction = null;
+
+function requestUrlEdit() {
+  _pendingUrlAction = 'home';
+  document.getElementById('urlPwInput').value = '';
+  document.getElementById('urlPwError').style.display = 'none';
+  document.getElementById('urlPwModal').style.display = 'flex';
+}
+
+function requestSettingsUrlSave() {
+  _pendingUrlAction = 'settings';
+  document.getElementById('urlPwInput').value = '';
+  document.getElementById('urlPwError').style.display = 'none';
+  document.getElementById('urlPwModal').style.display = 'flex';
+}
+
+function confirmUrlAction() {
+  var val = document.getElementById('urlPwInput').value;
+  var stored = localStorage.getItem(PW_KEY) || hashPw(DEFAULT_PW);
+  if (hashPw(val) !== stored) {
+    document.getElementById('urlPwError').style.display = 'block';
+    document.getElementById('urlPwInput').value = '';
+    return;
+  }
+  document.getElementById('urlPwModal').style.display = 'none';
+  if (_pendingUrlAction === 'home') {
+    var inp = document.getElementById('sheetsUrl');
+    inp.readOnly = false;
+    inp.style.background = '#fff';
+    inp.style.color = 'var(--text)';
+    inp.focus(); inp.select();
+    toast('✏️ يمكنك تعديل الرابط. اضغط "حفظ" بعد التعديل.');
+    var btn = inp.nextElementSibling;
+    btn.textContent = '💾 حفظ';
+    btn.onclick = function() { saveUrlDirect('home'); };
+  } else if (_pendingUrlAction === 'settings') {
+    saveUrlDirect('settings');
+  }
+}
+
+function saveUrlDirect(src) {
+  var url = src === 'home' ? document.getElementById('sheetsUrl').value.trim() : document.getElementById('sheetsUrlSettings').value.trim();
+  if (!url) { toast('❌ يرجى إدخال الرابط'); return; }
+  if (!url.startsWith('https://script.google.com')) { toast('❌ رابط غير صحيح'); return; }
+  localStorage.setItem(URL_KEY, url);
+  document.getElementById('sheetsUrl').value = url;
+  document.getElementById('sheetsUrlSettings').value = url;
+  var homeInp = document.getElementById('sheetsUrl');
+  homeInp.readOnly = true;
+  homeInp.style.background = '#f8fafc';
+  homeInp.style.color = 'var(--muted)';
+  homeInp.classList.remove('err'); homeInp.classList.add('ok');
+  var btn = homeInp.nextElementSibling;
+  btn.textContent = '✏️ تعديل';
+  btn.onclick = function() { requestUrlEdit(); };
+  toast('✅ تم حفظ الرابط، جارٍ الاتصال...');
+  testConnection(url);
+}
+
+function closeUrlPwModal() {
+  document.getElementById('urlPwModal').style.display = 'none';
+  _pendingUrlAction = null;
+}
+
+function saveLocal(doSync) {
+  if (doSync === undefined) doSync = true;
+  S.lastModified = Date.now();
+  var dataStr = JSON.stringify(S);
+  idbSet(DATA_KEY, dataStr);
+  render();
+  // عرض زر النسخة الاحتياطية السريع مرة واحدة في الجلسة
+  offerQuickBackup();
+  // Only push to server when data actually changed (not a full fetch-merge)
+  if (doSync && AUTO_SYNC_ENABLED) {
+    var url = localStorage.getItem(URL_KEY);
+    if (url) {
+      setAutoSyncStatus('busy', 'جاري رفع التعديل...');
+      pushToServer(url, false, function(){
+        setAutoSyncStatus('ok', 'تم حفظ التعديل ✅');
+      });
+    }
+  }
+}
+
+function testConnection(url) {
+  setDot('busy', 'جارٍ الاتصال...');
+  jsonp(url, {action:'ping'}, function(r) {
+    if (r && r.status === 'ok') {
+      setDot('ok', 'متصل ✅');
+      showInfo('✅ تم الاتصال — المزامنة تلقائية عند كل تعديل', 'ok');
+    } else {
+      setDot('err', 'خطأ في الاتصال');
+      showInfo('❌ تأكد من الرابط وإعدادات Deploy', 'err');
+    }
+  }, function() {
+    setDot('err', 'فشل الاتصال');
+    showInfo('❌ تأكد من الرابط وإعدادات Deploy', 'err');
+  });
+}
+
+function manualSync() {
+  var url = localStorage.getItem(URL_KEY);
+  if (!url) { toast('❌ يرجى إضافة الرابط أولاً'); return; }
+  setDot('busy', 'جارٍ المزامنة...');
+  setAutoSyncStatus('busy', 'جاري المزامنة...');
+  toast('🔄 جاري المزامنة...');
+  // اقرأ من الشيت أولاً ثم قارن
+  jsonp(url, {action:'fetch', year:CURRENT_YEAR}, function(r) {
+    if (r && r.status === 'ok' && r.data) {
+      var serverMod = r.data.lastModified || 0;
+      var localMod  = S.lastModified || 0;
+      if (serverMod > localMod) {
+        // الشيت أحدث → سحب
+        S.totalAnnual  = r.data.totalAnnual;
+        S.leaves       = r.data.leaves || [];
+        S.rests        = r.data.rests  || [];
+        S.lastModified = serverMod;
+        localStorage.setItem(DATA_KEY, JSON.stringify(S));
+        document.getElementById('totalAnnual').value = S.totalAnnual;
+        render();
+        var now = new Date().toLocaleString('ar-EG');
+        localStorage.setItem(SYNC_KEY, now);
+        setDot('ok', 'آخر مزامنة: ' + now);
+        setAutoSyncStatus('ok', 'تم جلب البيانات ✅');
+        showInfo('📥 تم جلب البيانات الأحدث — ' + now, 'ok');
+        toast('📥 تم تحديث البيانات من Google Sheets');
+      } else {
+        // المحلي أحدث أو متساوي → رفع
+        pushToServer(url, true);
+      }
+    } else {
+      // فشل القراءة → حاول الرفع على الأقل
+      pushToServer(url, true);
+    }
+  }, function() {
+    setDot('err', 'فشلت المزامنة');
+    setAutoSyncStatus('err', 'تعذر الاتصال');
+    toast('❌ فشلت المزامنة');
+  });
+}
+
+function syncNow(url, feedback) {
+  pushToServer(url, feedback);
+}
+
+// ─── JSONP helper ────────────────────────────────────────
+function jsonp(url, params, onSuccess, onError) {
+  var cbName = '_cb' + Date.now();
+  var timer;
+  window[cbName] = function(data) {
+    clearTimeout(timer);
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    var s = document.getElementById(cbName);
+    if (s && s.parentNode) s.parentNode.removeChild(s);
+    onSuccess(data);
+  };
+  timer = setTimeout(function() {
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    var s = document.getElementById(cbName);
+    if (s && s.parentNode) s.parentNode.removeChild(s);
+    if (onError) onError();
+  }, 10000);
+  var qs = '?callback=' + cbName;
+  Object.keys(params).forEach(function(k){ qs += '&' + k + '=' + encodeURIComponent(params[k]); });
+  var script = document.createElement('script');
+  script.id  = cbName;
+  script.src = url + qs;
+  script.onerror = function() {
+    clearTimeout(timer);
+    try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+    if (onError) onError();
+  };
+  document.head.appendChild(script);
+}
+// ─────────────────────────────────────────────────────────
+
+function setDot(state, txt) {
+  var d = document.getElementById('syncDot');
+  var t = document.getElementById('syncTxt');
+  d.className = 'sync-dot';
+  if (state === 'ok') d.classList.add('ok');
+  else if (state === 'busy') d.classList.add('busy');
+  t.textContent = txt;
+}
+
+function showInfo(msg, type) {
+  ['infoBox','infoBox2'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) { b.style.display='block'; b.className='info-box '+type; b.textContent=msg; }
+  });
+}
+
+function pickChip(el) {
+  document.querySelectorAll('#chips .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  document.getElementById('customRow').className = el.dataset.days === '0' ? 'custom-row show' : 'custom-row';
+}
+
+function getValidDays() {
+  var chip = document.querySelector('#chips .chip.on');
+  if (!chip) return 30;
+  if (chip.dataset.days === '0') return parseInt(document.getElementById('customDays').value) || 30;
+  return parseInt(chip.dataset.days);
+}
+
+function pickShift(el) {
+  document.querySelectorAll('#shiftChips .shift-chip, #shiftChips .shift-none-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+}
+
+function getSelectedShift() {
+  var el = document.querySelector('#shiftChips .on');
+  return el ? el.dataset.val : '';
+}
+
+function updateRestOpts() {
+  var lv = document.getElementById('lDate').value;
+  var sel = document.getElementById('lRestRef');
+  if (!lv) { sel.innerHTML = '<option>اختر تاريخ الإجازة أولاً</option>'; return; }
+  var ld = new Date(lv);
+  var valid = S.rests.filter(function(r) {
+    var rp = r.date.split('-'); var rd = new Date(parseInt(rp[0]), parseInt(rp[1])-1, parseInt(rp[2]));
+    var diff = (ld - rd) / 86400000;
+    var mx = r.validDays || 30;
+    var used = S.leaves.some(function(l){ return l.restRef === r.date; });
+    return diff >= 0 && diff <= mx && !used;
+  });
+  sel.innerHTML = valid.length ? valid.map(function(r){ return '<option value="'+r.date+'">'+r.date+' (صالح '+(r.validDays||30)+' يوم)</option>'; }).join('') : '<option value="">لا توجد بدلات متاحة</option>';
+}
+
+function render() {
+  var taken = S.leaves.filter(function(l){ return l.type==='سنوي'; }).reduce(function(s,l){ return s+parseFloat(l.days); }, 0);
+  document.getElementById('s-remaining').textContent = +(S.totalAnnual - taken).toFixed(1);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var avail = S.rests.filter(function(r) {
+    var rp = r.date.split('-'); var d = new Date(parseInt(rp[0]), parseInt(rp[1])-1, parseInt(rp[2]));
+    var diff = (today - d) / 86400000;
+    var mx = r.validDays || 30;
+    var used = S.leaves.some(function(l){ return l.restRef === r.date; });
+    return diff >= 0 && diff <= mx && !used;
+  });
+  document.getElementById('s-badal').textContent = +avail.reduce(function(s,r){ return s+parseFloat(r.days); },0).toFixed(1);
+  renderAvail(avail, today);
+  var allLeaves = S.leaves.slice().sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+  renderHistLeaves('hist-all-leaves', allLeaves, today);
+  var restAvail = S.rests.filter(function(r){
+    var rp2=r.date.split('-'); var d2=new Date(parseInt(rp2[0]),parseInt(rp2[1])-1,parseInt(rp2[2])); var mx2=r.validDays||30; var diff2=(today-d2)/86400000;
+    var used2=S.leaves.some(function(l){ return l.restRef===r.date; });
+    return !used2 && diff2>=0 && diff2<=mx2;
+  }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+  var restOther = S.rests.filter(function(r){
+    var rp3=r.date.split('-'); var d2=new Date(parseInt(rp3[0]),parseInt(rp3[1])-1,parseInt(rp3[2])); var mx2=r.validDays||30; var diff2=(today-d2)/86400000;
+    var used2=S.leaves.some(function(l){ return l.restRef===r.date; });
+    return used2 || diff2<0 || diff2>mx2;
+  }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+  renderHistRests('hist-rest-avail', restAvail, today, false);
+  var usedTitle=document.getElementById('hist-rest-used-title');
+  if(usedTitle) usedTitle.style.display=restOther.length?'inline-block':'none';
+  renderHistRests('hist-rest-used', restOther, today, true);
+  renderMonthlyStats();
+}
+
+function renderMonthlyStats() {
+  var grid = document.getElementById('monthStatsGrid');
+  if (!grid) return;
+  var monthly = {};
+  S.leaves.forEach(function(l) {
+    var m = l.date ? l.date.substring(0,7) : null;
+    if (!m) return;
+    if (!monthly[m]) monthly[m] = {annual:0, badal:0};
+    if (l.type === 'سنوي') monthly[m].annual += parseFloat(l.days)||0;
+    else monthly[m].badal += parseFloat(l.days)||0;
+  });
+  var keys = Object.keys(monthly).sort().reverse();
+  if (!keys.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;">لا توجد بيانات بعد</p>'; return; }
+  var arabicMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  grid.innerHTML = keys.map(function(m) {
+    var parts = m.split('-'); var yr = parts[0]; var mo = parseInt(parts[1],10);
+    var label = arabicMonths[mo-1] + ' ' + yr; var s = monthly[m]; var total = s.annual + s.badal;
+    return '<div class="month-stat-row"><div class="month-stat-label">📅 '+label+'</div><div class="month-stat-count">'+(s.annual?'<span class="month-count-badge mc-annual">سنوي: '+s.annual+'</span>':'')+(s.badal?'<span class="month-count-badge mc-badal">بدل: '+s.badal+'</span>':'')+'<span class="month-count-badge mc-total">إجمالي: '+total+'</span></div></div>';
+  }).join('');
+}
+
+function formatDateAr(ds) {
+  if (!ds) return '';
+  var AM=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  var DN=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  var p=ds.split('-'); if(p.length<3) return ds;
+  var d=parseInt(p[2],10), m=parseInt(p[1],10)-1, y=p[0];
+  return '<span style="font-weight:900;font-size:0.9rem;color:var(--primary)">'+d+' '+AM[m]+'</span> <span style="font-size:0.72rem;color:var(--muted)">'+DN[new Date(ds).getDay()]+' \u2014 '+y+'</span>';
+}
+
+function renderHistLeaves(id, items, today) {
+  var el=document.getElementById(id); if(!el) return;
+  if(!items.length){el.innerHTML='<p style="padding:10px;color:var(--muted);font-size:0.8rem;">لا توجد إجازات</p>';return;}
+  el.innerHTML=items.map(function(item){
+    var isB=item.type==='\u0628\u062f\u0644 \u0631\u0627\u062d\u0629';
+    var bc=isB?'#38b2ac':'#2B6CB0';
+    var icon=isB?'\ud83d\udd04':'\ud83c\udf34';
+    var lbl=isB?'\u0628\u062f\u0644 \u0631\u0627\u062d\u0629':'\u0633\u0646\u0648\u064a\u0629';
+    var lc=isB?'#22543d':'#1a365d'; var lb=isB?'#c6f6d5':'#bee3f8';
+    var sb=item.shift?'<span class="badge pink">\ud83c\udf38 '+item.shift+'</span>':'';
+    var rn=item.restRef?'<span style="font-size:0.68rem;color:var(--muted)">\ud83d\udcc5 \u064a\u0648\u0645 \u0639\u0645\u0644: '+item.restRef+'</span>':'';
+    return '<div class="item-card" style="border-right-color:'+bc+';padding:12px 13px;">'
+      +'<div class="item-info">'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">'
+      +'<span>'+icon+'</span>'
+      +'<span style="background:'+lb+';color:'+lc+';font-size:0.65rem;font-weight:800;padding:2px 9px;border-radius:12px;">'+lbl+'</span>'
+      +sb+'</div>'
+      +'<div style="margin-bottom:3px;">'+formatDateAr(item.date)+'</div>'
+      +(rn?'<div style="margin-top:2px;">'+rn+'</div>':'')
+      +'</div>'
+      +'<div style="text-align:center;margin:0 8px;min-width:38px;">'
+      +'<div style="font-size:1.3rem;font-weight:900;color:var(--primary);">'+parseFloat(item.days)+'</div>'
+      +'<div style="font-size:0.6rem;color:var(--muted);">\u064a\u0648\u0645</div>'
+      +'</div>'
+      +'<button class="del-btn" onclick="delItem(\'L\','+item.id+')">🗑️</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderHistRests(id, items, today, isOther) {
+  var el=document.getElementById(id); if(!el) return;
+  if(!items.length){el.innerHTML='<p style="padding:10px;color:var(--muted);font-size:0.8rem;">'+(isOther?'\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u062f\u0644\u0627\u062a \u0645\u0633\u062a\u062e\u062f\u0645\u0629':'\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u062f\u0644\u0627\u062a \u0645\u062a\u0627\u062d\u0629')+'</p>';return;}
+  el.innerHTML=items.map(function(r){
+    var rp4=r.date.split('-'); var d2=new Date(parseInt(rp4[0]),parseInt(rp4[1])-1,parseInt(rp4[2])); var mx2=r.validDays||30; var diff2=(today-d2)/86400000;
+    var rem=mx2-Math.floor(diff2);
+    var used2=S.leaves.some(function(l){return l.restRef===r.date;});
+    var badge='';
+    if(used2) badge='<span class="badge gray" style="font-size:0.63rem;">\u2714\ufe0f \u062a\u0645 \u0627\u0633\u062a\u062e\u062f\u0627\u0645\u0647 \u0625\u062c\u0627\u0632\u0629</span>';
+    else if(rem<0) badge='<span class="badge red" style="font-size:0.63rem;">\u274c \u0627\u0646\u062a\u0647\u062a \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629</span>';
+    else if(rem<=5) badge='<span class="badge yellow" style="font-size:0.63rem;">\u26a0\ufe0f \u064a\u0646\u062a\u0647\u064a \u062e\u0644\u0627\u0644 '+rem+' \u064a\u0648\u0645</span>';
+    else badge='<span class="badge green" style="font-size:0.63rem;">\u2705 \u0645\u062a\u0627\u062d \u2014 '+rem+' \u064a\u0648\u0645</span>';
+    var note=r.note?'<span style="font-size:0.68rem;color:var(--muted);">'+r.note+'</span>':'';
+    return '<div class="item-card" style="border-right-color:#38b2ac;padding:12px 13px;">'
+      +'<div class="item-info">'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">'
+      +'<span>\ud83d\udd04</span>'
+      +'<span style="background:#e9d8fd;color:#44337a;font-size:0.65rem;font-weight:800;padding:2px 9px;border-radius:12px;">\u064a\u0648\u0645 \u0639\u0645\u0644 \u0625\u0636\u0627\u0641\u064a</span>'
+      +'</div>'
+      +'<div style="margin-bottom:4px;">'+formatDateAr(r.date)+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'+badge+(note?note:'')+'</div>'
+      +'</div>'
+      +'<div style="text-align:center;margin:0 8px;min-width:38px;">'
+      +'<div style="font-size:1.3rem;font-weight:900;color:var(--primary);">'+parseFloat(r.days)+'</div>'
+      +'<div style="font-size:0.6rem;color:var(--muted);">\u064a\u0648\u0645</div>'
+      +'</div>'
+      +'<button class="del-btn" onclick="delItem(\'R\','+r.id+')">🗑️</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderAvail(list, today) {
+  var sec = document.getElementById('availSection');
+  var ul = document.getElementById('availList');
+  if (!list.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  ul.innerHTML = list.map(function(r){
+    var rp5=r.date.split('-'); var d = new Date(parseInt(rp5[0]),parseInt(rp5[1])-1,parseInt(rp5[2])); var mx = r.validDays||30; var rem = mx - Math.floor((today-d)/86400000);
+    return '<div class="item-card" style="border-right-color:#38b2ac"><div class="item-info"><div class="item-main">📅 '+r.date+'</div><div class="item-sub">'+r.days+' يوم'+(r.note?' — '+r.note:'')+'</div><span class="badge '+(rem<=5?'yellow':'green')+'">'+(rem<=5?'⚠️ ينتهي خلال '+rem+' يوم':'✅ متاح — '+rem+' يوم')+'</span></div></div>';
+  }).join('');
+}
+
+function renderHist(id, items, type, today) {
+  var el = document.getElementById(id);
+  if (!items.length) { el.innerHTML='<p style="padding:10px;color:var(--muted);">لا توجد سجلات</p>'; return; }
+  el.innerHTML = items.map(function(item){
+    var isLeave = item.cat==='L' || type==='L';
+    var bc = isLeave?'#2B6CB0':'#38b2ac';
+    var lbl = isLeave?(item.type==='بدل راحة'?'إجازة بدل راحة':'إجازة سنوية'):'يوم عمل إضافي';
+    var badge = '';
+    var shiftBadge = item.shift ? '<span class="badge pink">🌸 وردية '+item.shift+'</span>' : '';
+    if (!isLeave && item.cat==='R') {
+      var rp6=item.date.split('-'); var d = new Date(parseInt(rp6[0]),parseInt(rp6[1])-1,parseInt(rp6[2])); var mx = item.validDays||30; var rem = mx - Math.floor((today-d)/86400000);
+      var used = S.leaves.some(function(l){ return l.restRef===item.date; });
+      if (used) badge='<span class="badge gray">✔️ تم استخدامه</span>';
+      else if (rem<0) badge='<span class="badge red">❌ انتهت صلاحيته</span>';
+      else if (rem<=5) badge='<span class="badge yellow">⚠️ ينتهي خلال '+rem+' يوم</span>';
+      else badge='<span class="badge green">✅ متاح — '+rem+' يوم</span>';
+    }
+    return '<div class="item-card" style="border-right-color:'+bc+'"><div class="item-info"><div class="item-main">'+item.date+'</div><div class="item-sub">'+lbl+(item.restRef?' — عمل: '+item.restRef:'')+(item.note?' — '+item.note:'')+'</div>'+badge+shiftBadge+'</div><div style="font-weight:900;margin:0 10px;">'+item.days+' يوم</div><button class="del-btn" onclick="delItem(\''+(isLeave?'L':'R')+'\','+item.id+')">🗑️</button></div>';
+  }).join('');
+}
+
+function addLeave() {
+  var date = document.getElementById('lDate').value;
+  var type = document.getElementById('lType').value;
+  var ref = document.getElementById('lRestRef').value;
+  if (!date) { toast('❌ يرجى اختيار التاريخ'); return; }
+  if (type==='بدل راحة' && !ref) { toast('❌ لا يوجد بدل راحة متاح'); return; }
+  var shift = getSelectedShift();
+  S.leaves.push({ id:Date.now(), date:date, type:type, days:document.getElementById('lDays').value, restRef:type==='بدل راحة'?ref:null, shift: shift || null });
+  saveLocal(); toast('✅ تم حفظ الإجازة');
+  document.querySelectorAll('#shiftChips .shift-chip, #shiftChips .shift-none-chip').forEach(function(c){ c.classList.remove('on'); });
+  document.querySelector('#shiftChips .shift-none-chip').classList.add('on');
+  go('home', document.querySelectorAll('.nav-btn')[0]);
+}
+
+function addRest() {
+  var date = document.getElementById('rDate').value;
+  if (!date) { toast('❌ يرجى اختيار التاريخ'); return; }
+  var vd = getValidDays();
+  S.rests.push({ id:Date.now(), date:date, days:document.getElementById('rDays').value, validDays:vd, note:document.getElementById('rNote').value.trim() });
+  saveLocal(); toast('✅ تم الحفظ — صالح '+vd+' يوم');
+  go('home', document.querySelectorAll('.nav-btn')[0]);
+}
+
+function delItem(cat, id) {
+  if (!confirm('هل أنت متأكد من الحذف؟')) return;
+  if (cat==='L') S.leaves = S.leaves.filter(function(i){ return i.id!==id; });
+  else S.rests = S.rests.filter(function(i){ return i.id!==id; });
+  saveLocal(); toast('🗑️ تم الحذف');
+}
+
+function updateAnnual() {
+  S.totalAnnual = document.getElementById('totalAnnual').value;
+  saveLocal();
+}
+
+function toggleRestSel() {
+  var isR = document.getElementById('lType').value==='بدل راحة';
+  document.getElementById('restSelGroup').style.display = isR?'block':'none';
+  if (isR) updateRestOpts();
+}
+
+function go(id, btn) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var pageId = ['add-leave','add-rest','history','settings'].indexOf(id) >= 0 ? id : 'home';
+  document.getElementById('page-'+pageId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function exportData() {
+  var a = document.createElement('a');
+  a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(S));
+  var now = new Date();
+  var dd = String(now.getDate()).padStart(2,'0');
+  var mm = String(now.getMonth()+1).padStart(2,'0');
+  var yyyy = now.getFullYear();
+  a.download = 'اجازات_' + yyyy + '-' + mm + '-' + dd + '.json';
+  a.click();
+  localStorage.setItem(BACKUP_REMINDER_KEY, Date.now().toString());
+  _autoBackupDoneThisSession = true;
+  var el = document.getElementById('lastBackupTime');
+  if (el) { var d = new Date(); el.textContent = d.toLocaleDateString('ar-EG') + ' - ' + d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}); }
+  toast('📤 تم حفظ النسخة المحلية ✅');
+}
+
+function importData(ev) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      S = parsed;
+      idbSet(DATA_KEY, JSON.stringify(S), function() {
+        localStorage.setItem(BACKUP_REMINDER_KEY, Date.now().toString());
+        document.getElementById('totalAnnual').value = S.totalAnnual;
+        render();
+        toast('✅ تم استعادة البيانات');
+        var url = localStorage.getItem(URL_KEY);
+        if (url) setTimeout(function(){ fetchAndMerge(); }, 800);
+      });
+    } catch(e) { toast('❌ خطأ في قراءة الملف'); }
+  };
+  r.readAsText(ev.target.files[0]);
+}
+
+function toast(msg, isHtml) {
+  var t = document.getElementById('toast');
+  if (isHtml) { t.innerHTML = msg; } else { t.textContent = msg; }
+  t.style.display='block';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.style.display='none'; t.innerHTML=''; }, 2800);
+}
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function copyCode() {
+  var txt = document.getElementById('codeBlock').textContent;
+  function fallbackCopy(t) {
+    var ta = document.createElement('textarea');
+    ta.value = t;
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); toast('✅ تم نسخ الكود'); }
+    catch(e) { toast('❌ فشل النسخ — حدد الكود يدوياً'); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(txt)
+      .then(function(){ toast('✅ تم نسخ الكود'); })
+      .catch(function(){ fallbackCopy(txt); });
+  } else {
+    fallbackCopy(txt);
+  }
+}
+
+function getArchive() {
+  try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveArchive(archive, cb) {
+  var str = JSON.stringify(archive);
+  idbSet(ARCHIVE_KEY, str, cb);
+}
+
+function openYearsModal() {
+  var archive = getArchive();
+  var years = Object.keys(archive).sort().reverse();
+  var tabList = document.getElementById('yearTabList');
+  var dataView = document.getElementById('yearDataView');
+  if (!years.length) {
+    tabList.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;">لا توجد سنوات مؤرشفة بعد.</p>';
+    dataView.innerHTML = '';
+  } else {
+    tabList.innerHTML = years.map(function(y, i) { return '<div class="year-tab'+(i===0?' active':'')+'" onclick="showYearData(\''+y+'\')">'+y+' <span class="archive-badge">أرشيف</span></div>'; }).join('');
+    showYearData(years[0]);
+  }
+  document.getElementById('newYearSection').style.display = (S.leaves.length > 0 || S.rests.length > 0) ? 'block' : 'none';
+  document.getElementById('yearsModal').classList.add('open');
+}
+
+function closeYearsModal() { document.getElementById('yearsModal').classList.remove('open'); }
+
+function showYearData(year) {
+  document.querySelectorAll('.year-tab').forEach(function(t){ t.classList.remove('active'); });
+  var tab = document.getElementById('ytab-'+year); if (tab) tab.classList.add('active');
+  var archive = getArchive(); var data = archive[year];
+  if (!data) { document.getElementById('yearDataView').innerHTML = ''; return; }
+  var annualTaken = (data.leaves||[]).filter(function(l){ return l.type==='سنوي'; }).reduce(function(s,l){ return s+parseFloat(l.days); }, 0);
+  var remaining = (data.totalAnnual||0) - annualTaken;
+  var arabicMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  var monthly = {};
+  (data.leaves||[]).forEach(function(l) {
+    var m = l.date ? l.date.substring(0,7) : null; if (!m) return;
+    if (!monthly[m]) monthly[m] = {annual:0, badal:0};
+    if (l.type==='سنوي') monthly[m].annual += parseFloat(l.days)||0; else monthly[m].badal += parseFloat(l.days)||0;
+  });
+  var monthKeys = Object.keys(monthly).sort().reverse();
+  var monthHtml = monthKeys.length ? monthKeys.map(function(m) {
+    var parts = m.split('-'); var mo = parseInt(parts[1],10); var label = arabicMonths[mo-1]+' '+parts[0]; var ms = monthly[m];
+    return '<div class="month-stat-row"><div class="month-stat-label">📅 '+label+'</div><div class="month-stat-count">'+(ms.annual?'<span class="month-count-badge mc-annual">سنوي: '+ms.annual+'</span>':'')+(ms.badal?'<span class="month-count-badge mc-badal">بدل: '+ms.badal+'</span>':'')+'</div></div>';
+  }).join('') : '<p style="color:var(--muted);font-size:0.75rem;">لا توجد بيانات</p>';
+  document.getElementById('yearDataView').innerHTML = '<div class="year-summary-grid"><div class="year-stat"><div class="year-stat-val">'+data.totalAnnual+'</div><div class="year-stat-lbl">الرصيد السنوي</div></div><div class="year-stat" style="border-top-color:var(--danger)"><div class="year-stat-val">'+annualTaken+'</div><div class="year-stat-lbl">إجازات مأخوذة</div></div><div class="year-stat" style="border-top-color:var(--success)"><div class="year-stat-val">'+Math.max(0,remaining).toFixed(1)+'</div><div class="year-stat-lbl">المتبقي</div></div></div><div style="font-weight:700;font-size:0.8rem;color:var(--primary);margin-bottom:8px;">📅 الإحصاء الشهري — '+year+'</div><div class="month-stats-grid">'+monthHtml+'</div>';
+}
+
+function archiveCurrentYear() {
+  var oldYear  = CURRENT_YEAR;
+  var nextYear = (parseInt(CURRENT_YEAR)+1).toString();
+  if (!confirm('⚠️ هل تريد أرشفة سنة '+oldYear+' وبدء سنة '+nextYear+'؟')) return;
+
+  // حفظ السنة القديمة في IDB + localStorage
+  var archive = getArchive();
+  archive[oldYear] = JSON.parse(JSON.stringify(S));
+  saveArchive(archive);
+
+  // بدء السنة الجديدة محلياً
+  CURRENT_YEAR = nextYear;
+  DATA_KEY     = 'v_data_' + CURRENT_YEAR;
+  S            = { totalAnnual: archive[oldYear].totalAnnual, leaves: [], rests: [], lastModified: 0 };
+  idbSet(DATA_KEY, JSON.stringify(S));
+  updateHeaderYear(); render(); closeYearsModal();
+
+  var url = localStorage.getItem(URL_KEY);
+  if (!url) { toast('✅ تم أرشفة ' + oldYear + ' محلياً — مرحباً بسنة ' + nextYear + ' 🎉'); return; }
+
+  toast('📦 جاري رفع أرشيف ' + oldYear + ' للشيت...');
+  var oldPayload  = JSON.parse(JSON.stringify(archive[oldYear]));
+  oldPayload.year = oldYear;
+  jsonp(url, {action:'archive', year:oldYear, data:JSON.stringify(oldPayload)}, function(r) {
+    if (r && r.status === 'ok') {
+      toast('✅ تم أرشفة ' + oldYear + ' — مرحباً بسنة ' + nextYear + ' 🎉');
+    } else {
+      toast('⚠️ أرشفة محلية تمت — تعذر رفع ' + oldYear + ' للشيت');
+    }
+    setTimeout(function(){ pushToServer(url, false); }, 800);
+  }, function() {
+    toast('⚠️ أرشفة محلية تمت — تعذر الاتصال بالشيت');
+    setTimeout(function(){ pushToServer(url, false); }, 800);
+  });
+}
+
+function syncAllArchive() {
+  var url = localStorage.getItem(URL_KEY);
+  if (!url) { toast('❌ يرجى إضافة الرابط أولاً'); return; }
+  var archive = getArchive();
+  var years   = Object.keys(archive);
+  if (!years.length) { toast('لا توجد سنوات مؤرشفة'); return; }
+  toast('📦 جاري رفع ' + years.length + ' سنة للشيت...');
+  setAutoSyncStatus('busy', 'جاري مزامنة الأرشيف...');
+  var i = 0;
+  function next() {
+    if (i >= years.length) {
+      // بعد الأرشيف، ارفع السنة الحالية كمان
+      pushToServer(url, false, function(){
+        setAutoSyncStatus('ok', 'تمت مزامنة الأرشيف ✅');
+        toast('✅ تمت مزامنة كل السنوات');
+      });
+      return;
+    }
+    var yr      = years[i++];
+    var payload = JSON.parse(JSON.stringify(archive[yr]));
+    payload.year = yr;
+    jsonp(url, {action:'archive', year:yr, data:JSON.stringify(payload)}, function(r) {
+      setTimeout(next, 500); // تأخير بسيط بين الطلبات
+    }, function() {
+      setTimeout(next, 500);
+    });
+  }
+  next();
+}
+
+function fetchAndMerge(onDone) {
+  var url = localStorage.getItem(URL_KEY);
+  if (!url) { if (onDone) onDone(); return; }
+  setAutoSyncStatus('busy', 'جاري جلب آخر البيانات...');
+  jsonp(url, {action:'fetch', year:CURRENT_YEAR}, function(r) {
+    if (r && r.status === 'ok' && r.data) {
+      var serverMod = r.data.lastModified || 0;
+      var localMod  = S.lastModified || 0;
+      if (serverMod > localMod) {
+        S.totalAnnual  = r.data.totalAnnual;
+        S.leaves       = r.data.leaves || [];
+        S.rests        = r.data.rests  || [];
+        S.lastModified = serverMod;
+        idbSet(DATA_KEY, JSON.stringify(S));
+        document.getElementById('totalAnnual').value = S.totalAnnual;
+        render();
+        setAutoSyncStatus('ok', 'تم جلب آخر التحديثات ✅');
+        var now = new Date().toLocaleString('ar-EG');
+        localStorage.setItem(SYNC_KEY, now);
+        setDot('ok', 'آخر مزامنة: ' + now);
+        toast('📥 تم تحديث البيانات من Google Sheets');
+      } else if (localMod > serverMod) {
+        pushToServer(url, false, function(){
+          setAutoSyncStatus('ok', 'تم رفع التحديثات المحلية ✅');
+        });
+      } else {
+        setAutoSyncStatus('ok', 'البيانات محدثة ✅');
+        var lt = localStorage.getItem(SYNC_KEY);
+        if (lt) setDot('ok', 'آخر مزامنة: ' + lt);
+      }
+    } else {
+      setAutoSyncStatus('ok', 'لا يوجد اتصال — البيانات محفوظة محلياً');
+    }
+    if (onDone) onDone();
+  }, function() {
+    setAutoSyncStatus('ok', 'لا يوجد اتصال — البيانات محفوظة محلياً');
+    if (onDone) onDone();
+  });
+}
+
+function pushToServer(url, feedback, onDone) {
+  setDot('busy', 'جارٍ المزامنة...');
+  ['syncBtn','syncBtn2'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=true; });
+  var payload = JSON.parse(JSON.stringify(S));
+  payload.year = CURRENT_YEAR;
+  payload.lastModified = S.lastModified || Date.now();
+  jsonp(url, {action:'sync', year:CURRENT_YEAR, data:JSON.stringify(payload)}, function(r) {
+    ['syncBtn','syncBtn2'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=false; });
+    if (r && r.status === 'ok') {
+      var now = new Date().toLocaleString('ar-EG');
+      localStorage.setItem(SYNC_KEY, now);
+      setDot('ok', 'آخر مزامنة: ' + now);
+      setAutoSyncStatus('ok', 'تمت المزامنة ✅');
+      if (feedback) { toast('✅ تمت المزامنة'); showInfo('✅ آخر مزامنة: ' + now, 'ok'); }
+      if (onDone) onDone();
+    } else {
+      setDot('err', 'فشلت المزامنة');
+      setAutoSyncStatus('err', 'فشلت المزامنة');
+      if (feedback) { toast('❌ فشلت المزامنة'); showInfo('❌ تحقق من الرابط', 'err'); }
+    }
+  }, function() {
+    ['syncBtn','syncBtn2'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=false; });
+    setDot('err', 'فشلت المزامنة');
+    setAutoSyncStatus('err', 'تعذر الاتصال');
+    if (feedback) { toast('❌ فشلت المزامنة'); showInfo('❌ تحقق من الاتصال والرابط', 'err'); }
+  });
+}
+
+function setAutoSyncStatus(state, text) {
+  var dot = document.getElementById('autoSyncDot');
+  var txt = document.getElementById('autoSyncText');
+  if (dot) {
+    dot.style.background = state === 'ok' ? 'var(--success)' : state === 'busy' ? 'var(--accent2)' : 'var(--danger)';
+  }
+  if (txt) txt.textContent = text;
+}
+
+function toggleAutoSync() {
+  AUTO_SYNC_ENABLED = document.getElementById('autoSyncToggle').checked;
+  if (AUTO_SYNC_ENABLED) toast('✅ المزامنة التلقائية عند التعديل — مفعلة');
+  else toast('⏸️ تم إيقاف المزامنة التلقائية');
+}
+
+init();
+
+// ═══════════════════════════════════════════════════
+//  PWA - Inline Service Worker (single-file / GitHub Pages)
+// ═══════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  const swCode = `
+const CACHE='alsawah-v1';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./']).catch(()=>{})).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{
+  if(e.request.url.includes('script.google.com')||e.request.url.includes('googleapis.com')){
+    e.respondWith(fetch(e.request).catch(()=>new Response('{}',{headers:{'Content-Type':'application/json'}})));return;
+  }
+  e.respondWith(caches.match(e.request).then(cached=>{
+    if(cached)return cached;
+    return fetch(e.request).then(res=>{
+      if(res&&res.status===200){const cl=res.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}
+      return res;
+    }).catch(()=>cached);
+  }));
+});`;
+  const swBlob = new Blob([swCode],{type:'text/javascript'});
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+      .catch(err=>console.log('SW:',err));
+  });
+}
+
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); _deferredPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'block';
+});
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  toast('✅ تم تثبيت التطبيق!');
+});
+function installPWA() {
+  if (!_deferredPrompt) return;
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(() => {
+    _deferredPrompt = null;
+    const btn = document.getElementById('pwaInstallBtn');
+    if (btn) btn.style.display = 'none';
+  });
+}
+</script>
+</body>
+</html>
