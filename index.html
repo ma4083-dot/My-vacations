@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>مدير الإجازات — Alsawah</title>
+<meta name="theme-color" content="#1a3a5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="إجازات Alsawah">
+<script>
+(function(){
+  var svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#1a3a5c"/><circle cx="256" cy="256" r="220" fill="#2B6CB0"/><text x="256" y="340" font-size="240" text-anchor="middle">🏖️</text></svg>';
+  var iconUrl = 'data:image/svg+xml,' + encodeURIComponent(svgIcon);
+  var al = document.createElement('link'); al.rel='apple-touch-icon'; al.href=iconUrl; document.head.appendChild(al);
+  var fl = document.createElement('link'); fl.rel='icon'; fl.type='image/svg+xml'; fl.href=iconUrl; document.head.appendChild(fl);
+  var manifest = {name:"مدير الإجازات — Alsawah",short_name:"إجازات Alsawah",start_url:"./",display:"standalone",background_color:"#f0f4f8",theme_color:"#1a3a5c",orientation:"portrait-primary",lang:"ar",dir:"rtl",icons:[{src:iconUrl,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+  var mb = new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  var ml = document.createElement('link'); ml.rel='manifest'; ml.href=URL.createObjectURL(mb); document.head.appendChild(ml);
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+<!-- ════════════════════════════════════════════════════
+     Firebase SDK v10 — modular via CDN ESM shim
+     نستخدم compat build عشان يشتغل في script عادي
+     ════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root {
+  --primary: #1a3a5c;
+  --primary-light: #2B6CB0;
+  --accent: #38b2ac;
+  --accent2: #f6ad55;
+  --danger: #e53e3e;
+  --success: #38a169;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1a202c;
+  --muted: #718096;
+  --border: #e2e8f0;
+  --shadow: 0 4px 20px rgba(26,58,92,0.10);
+  --radius: 16px;
+  --pink: #ed64a6;
+  --pink-light: #fce7f3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  padding: 18px 18px 18px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(26,58,92,0.25);
+  text-align: center;
+}
+.app-header h1 { color:#fff; font-size:1.3rem; font-weight:900; }
+.brand-sub { color:var(--accent2); font-size:1.35rem; font-weight:900; letter-spacing:2px; display:block; margin-top:2px; }
+.subtitle { color:rgba(255,255,255,0.7); font-size:0.7rem; margin-top:4px; }
+.sync-bar { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; font-size:0.68rem; color:rgba(255,255,255,0.85); }
+.sync-dot { width:8px; height:8px; border-radius:50%; background:#fc8181; flex-shrink:0; }
+.sync-dot.ok { background:#68d391; }
+.sync-dot.busy { background:var(--accent2); animation:blink 0.8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card); display:flex; border-top:1px solid var(--border); z-index:200; box-shadow:0 -4px 20px rgba(0,0,0,0.08); }
+.nav-btn { flex:1; padding:10px 4px 8px; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'Cairo'; font-size:0.65rem; color:var(--muted); }
+.nav-btn .icon { font-size:1.2rem; }
+.nav-btn.active { color:var(--primary-light); font-weight:700; }
+
+.page { display:none; padding:14px; animation:fadeIn 0.25s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:14px; }
+.form-group { margin-bottom:13px; }
+.form-label { display:block; font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:5px; }
+.form-control { width:100%; padding:11px 13px; border:2px solid var(--border); border-radius:11px; font-family:'Cairo'; font-size:0.88rem; background:#fdfdfd; color:var(--text); }
+.form-control:focus { outline:none; border-color:var(--primary-light); }
+
+.btn { width:100%; padding:13px; border:none; border-radius:11px; font-family:'Cairo'; font-size:0.9rem; font-weight:700; cursor:pointer; transition: opacity 0.15s; }
+.btn-primary { background:linear-gradient(135deg,var(--primary-light),var(--accent)); color:#fff; box-shadow:0 4px 10px rgba(43,108,176,0.3); }
+.btn-success { background:linear-gradient(135deg,#38a169,#48bb78); color:#fff; }
+.btn-outline { background:#f8fafc; border:1px solid var(--border); color:var(--text); font-size:0.78rem; }
+.btn-danger { background:linear-gradient(135deg,#e53e3e,#fc8181); color:#fff; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-sm { padding:8px 14px; width:auto; font-size:0.75rem; border-radius:9px; }
+
+.summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.stat-card { background:var(--card); border-radius:var(--radius); padding:15px 13px; box-shadow:var(--shadow); border-top:4px solid var(--primary-light); }
+.stat-label { font-size:0.7rem; color:var(--muted); font-weight:600; }
+.stat-value { font-size:1.75rem; font-weight:900; color:var(--primary); }
+
+.chips { display:flex; gap:7px; flex-wrap:wrap; }
+.chip { padding:6px 12px; border-radius:20px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.73rem; font-weight:600; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.chip.on { background:var(--primary-light); color:#fff; border-color:var(--primary-light); }
+.custom-row { display:none; margin-top:9px; align-items:center; gap:8px; }
+.custom-row.show { display:flex; }
+.custom-row input { width:85px; padding:9px; border:2px solid var(--border); border-radius:9px; font-family:'Cairo'; font-size:0.85rem; text-align:center; }
+
+.section-title { margin:18px 0 9px; font-size:0.95rem; color:var(--primary); border-bottom:2px solid var(--accent); display:inline-block; padding-bottom:2px; }
+.item-card { background:var(--card); padding:13px; border-radius:var(--radius); margin-bottom:9px; display:flex; align-items:center; border-right:4px solid var(--primary-light); box-shadow:var(--shadow); }
+.item-info { flex:1; }
+.item-main { font-weight:700; font-size:0.88rem; }
+.item-sub { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+.del-btn { color:var(--danger); background:none; border:none; cursor:pointer; padding:5px; font-size:1rem; }
+.badge { font-size:0.62rem; padding:2px 8px; border-radius:20px; font-weight:700; margin-top:4px; display:inline-block; }
+.badge.green { background:#c6f6d5; color:#22543d; }
+.badge.yellow { background:#fefcbf; color:#744210; }
+.badge.red { background:#fed7d7; color:#742a2a; }
+.badge.gray { background:#e2e8f0; color:var(--muted); }
+.badge.pink { background:#fce7f3; color:#97266d; }
+
+.toast { position:fixed; bottom:88px; left:50%; transform:translateX(-50%); background:#1a3a5c; color:#fff; padding:10px 20px; border-radius:25px; font-size:0.82rem; display:none; z-index:1000; box-shadow:0 4px 15px rgba(0,0,0,0.2); white-space:nowrap; max-width:90vw; text-align:center; }
+
+.pw-modal-bg { display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9000; align-items:center; justify-content:center; padding:20px; }
+.pw-modal { background:#fff; border-radius:20px; padding:24px; width:100%; max-width:360px; text-align:center; direction:rtl; }
+.pw-modal h2 { color:var(--primary); font-size:1.2rem; margin-bottom:6px; }
+.pw-modal p { color:var(--muted); font-size:0.78rem; margin-bottom:18px; }
+.pw-input-wrap { position:relative; margin-bottom:14px; }
+.pw-input { width:100%; padding:13px 44px 13px 13px; border:2px solid var(--border); border-radius:12px; font-family:'Cairo'; font-size:1.1rem; text-align:center; letter-spacing:4px; }
+.pw-input:focus { outline:none; border-color:var(--primary-light); }
+.pw-toggle { position:absolute; left:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--muted); }
+.pw-error { color:var(--danger); font-size:0.75rem; margin-bottom:10px; display:none; }
+.pw-logo { font-size:2.5rem; margin-bottom:10px; }
+
+.settings-section { margin-bottom:18px; }
+.settings-section-title { font-size:0.85rem; font-weight:700; color:var(--primary); margin-bottom:10px; padding-bottom:5px; border-bottom:2px solid var(--accent); display:flex; align-items:center; gap:6px; }
+.info-box { border-radius:10px; padding:9px 11px; font-size:0.72rem; line-height:1.6; margin-top:9px; }
+.info-box.ok { background:#f0fff4; border:1px solid #9ae6b4; color:#22543d; }
+.info-box.warn { background:#fffbeb; border:1px solid #fbd38d; color:#744210; }
+.info-box.err { background:#fff5f5; border:1px solid #fed7d7; color:#742a2a; }
+
+.backup-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:13px; padding-top:13px; border-top:1px dashed var(--border); }
+
+.month-stats-grid { display:grid; gap:9px; }
+.month-stat-row { background:var(--card); border-radius:12px; padding:11px 14px; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:space-between; border-right:3px solid var(--primary-light); }
+.month-stat-label { font-size:0.8rem; font-weight:700; color:var(--primary); }
+.month-stat-count { font-size:0.75rem; color:var(--muted); display:flex; gap:10px; }
+.month-count-badge { padding:2px 9px; border-radius:12px; font-weight:700; font-size:0.7rem; }
+.mc-annual { background:#bee3f8; color:#1a365d; }
+.mc-badal { background:#c6f6d5; color:#22543d; }
+.mc-total { background:#e9d8fd; color:#44337a; }
+
+.shift-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+.shift-chip { padding:5px 12px; border-radius:18px; border:2px solid var(--pink); background:var(--pink-light); font-family:'Cairo'; font-size:0.72rem; font-weight:700; cursor:pointer; color:var(--pink); transition:all 0.15s; }
+.shift-chip.on { background:var(--pink); color:#fff; border-color:var(--pink); }
+.shift-none-chip { padding:5px 12px; border-radius:18px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.72rem; font-weight:600; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.shift-none-chip.on { background:var(--muted); color:#fff; border-color:var(--muted); }
+
+.year-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:600; overflow-y:auto; padding:24px 14px; }
+.year-modal-bg.open { display:block; }
+.year-modal { background:#fff; border-radius:var(--radius); padding:18px; max-width:480px; margin:0 auto; direction:rtl; }
+.year-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.year-modal-header h3 { color:var(--primary); font-size:1rem; }
+.year-tab-list { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.year-tab { padding:7px 16px; border-radius:20px; border:2px solid var(--border); background:#f8fafc; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.year-tab.active { background:var(--primary-light); color:#fff; border-color:var(--primary-light); }
+.year-summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:14px; }
+.year-stat { background:var(--bg); border-radius:12px; padding:11px 9px; text-align:center; border-top:3px solid var(--primary-light); }
+.year-stat-val { font-size:1.4rem; font-weight:900; color:var(--primary); }
+.year-stat-lbl { font-size:0.65rem; color:var(--muted); margin-top:2px; }
+.archive-badge { background:var(--accent2); color:#fff; font-size:0.6rem; padding:2px 8px; border-radius:10px; font-weight:700; margin-right:5px; }
+.archive-notice { background:#fffbeb; border:1px solid #fbd38d; border-radius:10px; padding:10px 12px; font-size:0.75rem; color:#744210; margin-bottom:12px; line-height:1.7; }
+.btn-archive { background:linear-gradient(135deg,var(--accent2),#ed8936); color:#fff; border:none; border-radius:11px; padding:11px; width:100%; font-family:'Cairo'; font-size:0.88rem; font-weight:700; cursor:pointer; margin-top:8px; }
+.new-year-section { margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); }
+
+/* Firebase status badge */
+.fb-status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.12); border-radius: 20px;
+  padding: 4px 12px; font-size: 0.68rem; color: #fff; margin-top: 6px;
+}
+.fb-pulse { width:7px; height:7px; border-radius:50%; background:#fc8181; }
+.fb-pulse.connected { background:#68d391; animation: pulse 2s infinite; }
+.fb-pulse.syncing { background:var(--accent2); animation:blink 0.6s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.3)} }
+
+.realtime-tag {
+  font-size: 0.6rem; background: rgba(104,211,145,0.2);
+  border: 1px solid rgba(104,211,145,0.4); color: #68d391;
+  border-radius: 10px; padding: 1px 7px; margin-right: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ بوابة كلمة المرور ═══ -->
+<div class="pw-modal-bg" id="pwGate">
+  <div class="pw-modal">
+    <div class="pw-logo">🔐</div>
+    <h2>Alsawah</h2>
+    <p>أدخل كلمة المرور للدخول</p>
+    <div id="defaultPwHint" style="background:#fffbeb;border:1px solid #fbd38d;border-radius:10px;padding:8px 12px;font-size:0.75rem;color:#744210;margin-bottom:12px;display:none;">🔑 كلمة المرور الافتراضية: <strong>1234</strong> — غيّرها من الإعدادات</div>
+    <div class="pw-input-wrap">
+      <input type="password" class="pw-input" id="pwInput" placeholder="••••••" maxlength="20"
+        onkeydown="if(event.key==='Enter') checkPw()">
+      <button class="pw-toggle" onclick="togglePwVis('pwInput',this)">👁️</button>
+    </div>
+    <div class="pw-error" id="pwError">❌ كلمة المرور غير صحيحة</div>
+    <button class="btn btn-primary" onclick="checkPw()">🔓 دخول</button>
+  </div>
+</div>
+
+<!-- ═══ الهيدر ═══ -->
+<header class="app-header">
+  <h1>مدير الإجازات 🏖️</h1>
+  <span class="brand-sub">ALSAWAH</span>
+  <div class="subtitle">
+    <span id="headerYearBadge">📅 سنة 2025</span>
+    &nbsp;|&nbsp;
+    <span style="cursor:pointer;text-decoration:underline;" onclick="openYearsModal()">📚 الأرشيف</span>
+  </div>
+  <div class="sync-bar">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncTxt">جاري الاتصال...</span>
+  </div>
+  <!-- شارة الاتصال الفوري -->
+  <div class="fb-status-badge" id="fbStatusBadge">
+    <span class="fb-pulse" id="fbPulse"></span>
+    <span id="fbStatusText">Firebase — غير متصل</span>
+    <span class="realtime-tag">🔴 LIVE</span>
+  </div>
+</header>
+
+<!-- ═══ الصفحات ═══ -->
+
+<!-- الرئيسية -->
+<div id="page-home" class="page active">
+  <div class="summary-grid">
+    <div class="stat-card"><div class="stat-label">🏖️ الرصيد المتبقي</div><div class="stat-value" id="s-remaining">0</div></div>
+    <div class="stat-card" style="border-top-color:var(--accent)"><div class="stat-label">🔄 بدل راحة متاح</div><div class="stat-value" id="s-badal">0</div></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;font-size:0.88rem;color:var(--primary);margin-bottom:10px;">⚙️ إجمالي الإجازات السنوية</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="number" id="totalAnnual" class="form-control" style="max-width:90px;" min="1" max="60" step="0.5" value="21">
+      <button class="btn btn-outline btn-sm" onclick="updateAnnual()">💾 حفظ</button>
+    </div>
+  </div>
+  <div id="availSection" style="display:none;">
+    <div class="section-title">⏰ بدلات راحة تنتهي قريباً</div>
+    <div id="availList"></div>
+  </div>
+</div>
+
+<!-- إضافة إجازة -->
+<div id="page-add-leave" class="page">
+  <div class="card">
+    <h3 style="margin-bottom:14px;font-size:1rem;">🏖️ إضافة إجازة</h3>
+    <div class="form-group"><label class="form-label">التاريخ:</label><input type="date" id="lDate" class="form-control" onchange="updateRestOpts()"></div>
+    <div class="form-group">
+      <label class="form-label">النوع:</label>
+      <select id="lType" class="form-control" onchange="toggleRestSel()">
+        <option value="سنوي">إجازة سنوية</option>
+        <option value="بدل راحة">إجازة بدل راحة</option>
+      </select>
+    </div>
+    <div class="form-group" id="restSelGroup" style="display:none;">
+      <label class="form-label">🔄 اختر يوم العمل المقابل:</label>
+      <select id="lRestRef" class="form-control"><option>اختر تاريخ الإجازة أولاً</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">عدد الأيام:</label><input type="number" id="lDays" class="form-control" value="1" step="0.5" min="0.5"></div>
+    <div class="form-group">
+      <label class="form-label">🌸 الوردية (اختياري):</label>
+      <div class="shift-chips" id="shiftChips">
+        <div class="shift-none-chip on" data-val="" onclick="pickShift(this)">بدون</div>
+        <div class="shift-chip" data-val="أولى" onclick="pickShift(this)">أولى</div>
+        <div class="shift-chip" data-val="ثانية" onclick="pickShift(this)">ثانية</div>
+        <div class="shift-chip" data-val="ثالثة" onclick="pickShift(this)">ثالثة</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addLeave()">✅ حفظ الإجازة</button>
+  </div>
+</div>
+
+<!-- إضافة بدل راحة -->
+<div id="page-add-rest" class="page">
+  <div class="card">
+    <h3 style="margin-bottom:14px;font-size:1rem;">🔄 إضافة يوم عمل (بدل راحة)</h3>
+    <div class="form-group"><label class="form-label">تاريخ يوم العمل:</label><input type="date" id="rDate" class="form-control"></div>
+    <div class="form-group"><label class="form-label">عدد الأيام:</label><input type="number" id="rDays" class="form-control" value="1" step="0.5"></div>
+    <div class="form-group">
+      <label class="form-label">📅 صالح لمدة:</label>
+      <div class="chips" id="chips">
+        <div class="chip on" data-days="30" onclick="pickChip(this)">شهر</div>
+        <div class="chip" data-days="14" onclick="pickChip(this)">أسبوعين</div>
+        <div class="chip" data-days="7" onclick="pickChip(this)">أسبوع</div>
+        <div class="chip" data-days="0" onclick="pickChip(this)">مخصص ✏️</div>
+      </div>
+      <div class="custom-row" id="customRow"><input type="number" id="customDays" placeholder="عدد الأيام" min="1"><span style="font-size:0.8rem;color:var(--muted);">يوم</span></div>
+    </div>
+    <div class="form-group"><label class="form-label">ملاحظة (اختياري):</label><input type="text" id="rNote" class="form-control" placeholder="مثال: مناوبة جمعة"></div>
+    <button class="btn btn-primary" onclick="addRest()">✅ حفظ يوم العمل</button>
+  </div>
+</div>
+
+<!-- السجل -->
+<div id="page-history" class="page">
+  <h3 style="margin-bottom:14px;font-size:1rem;">📋 سجل التحركات</h3>
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-weight:700;font-size:0.88rem;color:var(--primary);margin-bottom:12px;">📅 الإحصاء الشهري</div>
+    <div class="month-stats-grid" id="monthStatsGrid"><p style="color:var(--muted);font-size:0.78rem;">لا توجد بيانات</p></div>
+  </div>
+  <div class="section-title">📋 سجل الإجازات</div><div id="hist-all-leaves"></div>
+  <div class="section-title">🔄 بدلات راحة متاحة</div><div id="hist-rest-avail"></div>
+  <div class="section-title" id="hist-rest-used-title" style="display:none">✔️ بدلات راحة مستخدمة / منتهية</div>
+  <div id="hist-rest-used"></div>
+</div>
+
+<!-- الإعدادات -->
+<div id="page-settings" class="page">
+  <div class="card">
+
+    <!-- تغيير كلمة المرور -->
+    <div class="settings-section">
+      <div class="settings-section-title">🔑 تغيير كلمة المرور</div>
+      <div class="form-group"><label class="form-label">كلمة المرور الحالية:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="oldPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('oldPw',this)">👁️</button></div></div>
+      <div class="form-group"><label class="form-label">كلمة المرور الجديدة:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="newPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('newPw',this)">👁️</button></div></div>
+      <div class="form-group"><label class="form-label">تأكيد كلمة المرور:</label><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="confirmPw" placeholder="••••••" maxlength="20"><button class="pw-toggle" onclick="togglePwVis('confirmPw',this)">👁️</button></div></div>
+      <button class="btn btn-primary" onclick="changePw()">🔒 تغيير كلمة المرور</button>
+    </div>
+
+    <!-- Firebase — حساب المستخدم -->
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">🔥 Firebase — المزامنة الفورية</div>
+
+      <!-- مستخدم مسجل -->
+      <div id="fbUserDisplay" style="display:none;margin-bottom:14px;">
+        <div class="info-box ok">
+          ✅ مسجل دخول كـ: <strong id="fbUserName">—</strong>
+          <span class="realtime-tag" style="margin-right:6px;">🔴 LIVE</span>
+          <br><small style="color:var(--muted);">البيانات تتزامن تلقائياً مع كل تغيير</small>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;width:auto;" onclick="logoutFb()">🚪 تسجيل خروج</button>
+      </div>
+
+      <!-- تسجيل دخول -->
+      <div id="fbLoginSection">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px;">🔑 تسجيل الدخول</div>
+        <div class="form-group"><label class="form-label">اسم المستخدم:</label><input type="text" id="fbLoginUser" class="form-control" placeholder="أدخل اسمك"></div>
+        <div class="form-group"><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="fbLoginPass" placeholder="كلمة المرور" maxlength="30"><button class="pw-toggle" onclick="togglePwVis('fbLoginPass',this)">👁️</button></div></div>
+        <button class="btn btn-primary" id="fbLoginBtn" style="margin-top:8px;" onclick="loginFbUser()">🔓 دخول</button>
+        <div style="border-top:1px dashed var(--border);padding-top:14px;margin-top:14px;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px;">🆕 إنشاء حساب جديد</div>
+          <div class="form-group"><label class="form-label">اسم المستخدم:</label><input type="text" id="fbNewUser" class="form-control" placeholder="مثال: ahmed"></div>
+          <div class="form-group"><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="fbNewPass" placeholder="كلمة المرور" maxlength="30"><button class="pw-toggle" onclick="togglePwVis('fbNewPass',this)">👁️</button></div></div>
+          <div class="form-group"><div class="pw-input-wrap" style="margin-bottom:0"><input type="password" class="form-control" id="fbNewPassConf" placeholder="تأكيد كلمة المرور" maxlength="30"><button class="pw-toggle" onclick="togglePwVis('fbNewPassConf',this)">👁️</button></div></div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-bottom:8px;">⚠️ احفظ اسمك وكلمة مرورك — لو نسيتهم مش هتقدر تسترجع بياناتك</div>
+          <button class="btn btn-success" id="fbRegisterBtn" onclick="registerFbUser()">✅ إنشاء حساب وربط</button>
+        </div>
+        <div style="border-top:1px dashed var(--border);padding-top:14px;margin-top:14px;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px;">🛟 استرجاع بيانات قديمة (مفقودة)</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-bottom:8px;">لو دخلت قبل كده بأي اسم مستخدم/كلمة مرور وضاعت بياناتك، افتح Firebase Console (مجموعة users) ودوّر على المستند اللي فيه بياناتك الحقيقية، وانسخ اسمه (Document ID) هنا:</div>
+          <div class="form-group"><input type="text" id="fbRecoverDocId" class="form-control" placeholder="مثال: ahmed_h1a2b3c4"></div>
+          <button class="btn btn-outline btn-sm" onclick="recoverOldData()">🔎 جلب البيانات من هذا المعرف</button>
+        </div>
+      </div>
+
+      <div id="fbSyncInfo" style="display:none;margin-top:12px;" class="info-box ok"></div>
+    </div>
+
+    <!-- النسخ الاحتياطي -->
+    <div class="settings-section" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);">
+      <div class="settings-section-title">💾 النسخ الاحتياطي المحلي</div>
+      <div class="info-box ok" style="margin-bottom:10px;font-size:0.72rem;">
+        🔥 <strong>Firebase هو مصدر الحقيقة الوحيد.</strong> البيانات محفوظة على السحابة دائماً ومتاحة من أي جهاز بنفس الحساب.
+      </div>
+      <div class="backup-row">
+        <button class="btn btn-outline" onclick="exportData()">📤 تصدير JSON</button>
+        <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📥 استيراد JSON</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+      </div>
+    </div>
+
+    <!-- خطر -->
+    <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);">
+      <button class="btn btn-danger" onclick="lockApp()">🔒 قفل التطبيق</button>
+    </div>
+  </div>
+</div>
+
+<!-- أرشيف السنوات -->
+<div class="year-modal-bg" id="yearsModal">
+  <div class="year-modal">
+    <div class="year-modal-header">
+      <h3>📚 أرشيف السنوات</h3>
+      <button onclick="closeYearsModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);">✕</button>
+    </div>
+    <div class="year-tab-list" id="yearTabList"></div>
+    <div id="yearDataView"></div>
+    <div class="new-year-section" id="newYearSection">
+      <div class="archive-notice">💡 <strong>أرشفة السنة الحالية:</strong> لما تبدأ سنة جديدة اضغط الزر ده — بيحفظ البيانات في الأرشيف ويبدأ سجل جديد فاضي.</div>
+      <button class="btn-archive" onclick="archiveCurrentYear()">📦 أرشفة <span id="archiveBtnYear"></span> وبدء سنة جديدة</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="go('home',this)"><span class="icon">🏠</span><span>الرئيسية</span></button>
+  <button class="nav-btn" onclick="go('add-leave',this)"><span class="icon">➕</span><span>إجازة</span></button>
+  <button class="nav-btn" onclick="go('add-rest',this)"><span class="icon">🔄</span><span>بدل راحة</span></button>
+  <button class="nav-btn" onclick="go('history',this)"><span class="icon">📋</span><span>السجل</span></button>
+  <button class="nav-btn" onclick="go('settings',this)"><span class="icon">⚙️</span><span>الإعدادات</span></button>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ⚙️  JAVASCRIPT — Firebase SDK + Realtime Sync
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════
+//  0. إعدادات Firebase
+//  🔁 استبدل هذه القيم بإعداداتك من Firebase Console
+// ══════════════════════════════════════════
+var FB_CONFIG = {
+  apiKey:            "AIzaSyBKDnuTA7kTdqXN8Hlx0sr6kD-0mxSFUzE",
+  authDomain:        "holiday-df5ff.firebaseapp.com",
+  projectId:         "holiday-df5ff",
+  storageBucket:     "holiday-df5ff.firebasestorage.app",
+  messagingSenderId: "887267330793",
+  appId:             "1:887267330793:web:4d557d18cbcae9b5597e78",
+  measurementId:     "G-QB73VX777D"
+};
+
+// ══════════════════════════════════════════
+//  1. ثوابت التطبيق
+// ══════════════════════════════════════════
+var PW_KEY       = 'alsawah_pw';
+var DEFAULT_PW   = '1234';
+var FB_USER_KEY  = 'alsawah_fb_user';
+var FB_PASS_KEY  = 'alsawah_fb_pass';
+var ARCHIVE_KEY  = 'alsawah_archive';
+
+var CURRENT_YEAR = new Date().getFullYear().toString();
+
+// ══════════════════════════════════════════
+//  2. حالة التطبيق
+// ══════════════════════════════════════════
+var S = { totalAnnual: 21, leaves: [], rests: [], lastModified: 0 };
+
+// ══════════════════════════════════════════
+//  3. تهيئة Firebase + Firestore
+// ══════════════════════════════════════════
+var _fb = null;
+var _db = null;
+var _unsubscribe = null;   // لإيقاف الـ listener عند الحاجة
+var _fbReady = false;
+
+function initFirebase() {
+  try {
+    if (firebase.apps.length) {
+      _fb = firebase.app();
+    } else {
+      _fb = firebase.initializeApp(FB_CONFIG);
+    }
+    _db = firebase.firestore();
+    // تفعيل Offline Persistence — يحفظ البيانات محلياً في IndexedDB تلقائياً
+    _db.enablePersistence({ synchronizeTabs: true })
+      .then(function() { console.log('✅ Firestore offline persistence enabled'); })
+      .catch(function(err) {
+        if (err.code === 'failed-precondition') {
+          console.warn('Persistence: multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Persistence: browser not supported');
+        }
+      });
+    _fbReady = true;
+    console.log('✅ Firebase initialized');
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    setDot('err', 'خطأ في تهيئة Firebase');
+  }
+}
+
+// ══════════════════════════════════════════
+//  4. مسار البيانات في Firestore
+//  users/{docId}/years/{year}
+//  users/{docId}/archive/{year}
+// ══════════════════════════════════════════
+function getDocId() {
+  // ملحوظة مهمة: قديماً كان الـ docId = اسم المستخدم + هاش كلمة المرور،
+  // فأي غلطة إملائية بسيطة في الباسورد كانت بتفتح "حساب" فاضي جديد
+  // بدل ما تدّي رسالة خطأ — وده اللي كان بيسبب ضياع البيانات.
+  // دلوقتي الباسورد بيتحقق منه بشكل منفصل (accounts collection)
+  // قبل ما نوصل هنا، فـ docId بقى معتمد على اسم المستخدم فقط.
+  var u = localStorage.getItem(FB_USER_KEY) || '';
+  if (!u) return null;
+  return u;
+}
+
+function getDisplayName() {
+  return localStorage.getItem(FB_USER_KEY) || '';
+}
+
+function yearRef(docId, year) {
+  return _db.collection('users').doc(docId).collection('years').doc(year || CURRENT_YEAR);
+}
+
+function archiveRef(docId, year) {
+  return _db.collection('users').doc(docId).collection('archive').doc(year);
+}
+
+// حساب المستخدمين — يُستخدم للتحقق من اسم المستخدم/كلمة المرور
+// بشكل منفصل عن docId، عشان أي غلطة في كتابة الباسورد متضيعش البيانات
+function accountRef(username) {
+  return _db.collection('accounts').doc(username);
+}
+
+// ══════════════════════════════════════════
+//  5. المزامنة الفورية — onSnapshot
+//  هذا هو قلب التطبيق — يستمع لكل تغيير على Firebase
+//  ويحدث الشاشة فوراً بدون polling
+// ══════════════════════════════════════════
+function startRealtimeListener() {
+  var docId = getDocId();
+  if (!docId || !_fbReady) {
+    setDot('err', 'يرجى تسجيل الدخول من الإعدادات');
+    setFbStatus('disconnected', 'غير متصل');
+    return;
+  }
+
+  // أوقف أي listener سابق
+  if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+
+  setDot('busy', 'جاري الاتصال بـ Firebase...');
+  setFbStatus('syncing', 'جاري الاتصال...');
+
+  // onSnapshot — يُطلَق فوراً عند الاشتراك وعند كل تغيير
+  _unsubscribe = yearRef(docId, CURRENT_YEAR).onSnapshot(
+    function(doc) {
+      if (doc.exists) {
+        var data = doc.data();
+        // دمج ذكي — نأخذ البيانات من Firebase دائماً
+        // لكن لو المحلي أحدث (مثلاً بسبب تغيير offline) نبقى محتفظين بالأحدث
+        var serverMod  = data.lastModified || 0;
+        var localMod   = S.lastModified   || 0;
+
+        if (serverMod >= localMod) {
+          // Firebase أحدث — استخدمه
+          S.totalAnnual  = data.totalAnnual  || S.totalAnnual;
+          S.leaves       = data.leaves       || [];
+          S.rests        = data.rests        || [];
+          S.lastModified = serverMod;
+          document.getElementById('totalAnnual').value = S.totalAnnual;
+          render();
+        }
+        // لو المحلي أحدث ← Firestore سيتلقى الكتابة منا لاحقاً تلقائياً
+      } else {
+        // لا توجد بيانات على Firebase — ارفع المحلي
+        var hasLocal = (S.leaves.length > 0 || S.rests.length > 0);
+        if (hasLocal) {
+          writeToFirebase(false);
+        }
+      }
+
+      var now = new Date().toLocaleString('ar-EG');
+      setDot('ok', 'متصل — آخر مزامنة: ' + now);
+      setFbStatus('connected', 'متصل — مزامنة فورية ✅');
+    },
+    function(err) {
+      console.error('onSnapshot error:', err);
+      setDot('err', 'خطأ في الاتصال');
+      setFbStatus('disconnected', 'خطأ: ' + err.message);
+      // Firebase Offline Persistence ستحتفظ بالبيانات محلياً تلقائياً
+    }
+  );
+}
+
+function stopRealtimeListener() {
+  if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+}
+
+// ══════════════════════════════════════════
+//  6. الكتابة إلى Firebase
+// ══════════════════════════════════════════
+function writeToFirebase(showFeedback, onDone) {
+  var docId = getDocId();
+  if (!docId || !_fbReady) {
+    if (typeof onDone === 'function') onDone();
+    return;
+  }
+
+  setDot('busy', 'جاري الحفظ على Firebase...');
+  setFbStatus('syncing', 'جاري الحفظ...');
+
+  var payload = {
+    totalAnnual:  S.totalAnnual,
+    leaves:       S.leaves,
+    rests:        S.rests,
+    lastModified: S.lastModified,
+    year:         CURRENT_YEAR,
+    updatedAt:    firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  yearRef(docId, CURRENT_YEAR).set(payload)
+    .then(function() {
+      var now = new Date().toLocaleString('ar-EG');
+      setDot('ok', 'تم الحفظ: ' + now);
+      setFbStatus('connected', 'تم الحفظ ✅');
+      if (showFeedback) toast('✅ تمت المزامنة مع Firebase');
+      if (typeof onDone === 'function') onDone();
+    })
+    .catch(function(err) {
+      // Firebase Offline → يحتفظ بالتغيير ويرسله لما يتصل
+      console.warn('Firebase write (will retry when online):', err.message);
+      setDot('ok', 'محفوظ محلياً — سيُرسل عند الاتصال');
+      setFbStatus('connected', 'محفوظ محلياً ♻️');
+      if (typeof onDone === 'function') onDone();
+    });
+}
+
+// ══════════════════════════════════════════
+//  7. حفظ البيانات (المحور الرئيسي)
+// ══════════════════════════════════════════
+function saveData(doSync) {
+  if (doSync === undefined) doSync = true;
+  S.lastModified = Date.now();
+
+  // نسخة احتياطية محلية في localStorage (خط دفاع ثانٍ)
+  try { localStorage.setItem('alsawah_local_' + CURRENT_YEAR, JSON.stringify(S)); } catch(e) {}
+
+  render();
+
+  if (doSync) {
+    writeToFirebase(false);
+  }
+}
+
+// ══════════════════════════════════════════
+//  8. الأرشيف
+// ══════════════════════════════════════════
+function getLocalArchive() {
+  try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveLocalArchive(arch) {
+  try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(arch)); } catch(e) {}
+}
+
+function archiveCurrentYear() {
+  var oldYear  = CURRENT_YEAR;
+  var nextYear = (parseInt(CURRENT_YEAR) + 1).toString();
+  if (!confirm('⚠️ هل تريد أرشفة سنة ' + oldYear + ' وبدء سنة ' + nextYear + '؟')) return;
+
+  // حفظ في الأرشيف المحلي
+  var arch = getLocalArchive();
+  arch[oldYear] = JSON.parse(JSON.stringify(S));
+  saveLocalArchive(arch);
+
+  // رفع الأرشيف إلى Firebase
+  var docId = getDocId();
+  if (docId && _fbReady) {
+    archiveRef(docId, oldYear).set(JSON.parse(JSON.stringify(S)))
+      .then(function() { toast('✅ تم أرشفة ' + oldYear + ' على Firebase'); })
+      .catch(function() { toast('⚠️ تم أرشفة محلياً فقط'); });
+  }
+
+  // بدء سنة جديدة
+  CURRENT_YEAR = nextYear;
+  S = { totalAnnual: arch[oldYear].totalAnnual, leaves: [], rests: [], lastModified: 0 };
+
+  updateHeaderYear();
+  stopRealtimeListener();
+  setTimeout(startRealtimeListener, 300);
+
+  render();
+  closeYearsModal();
+  toast('🎉 مرحباً بسنة ' + nextYear);
+}
+
+// ══════════════════════════════════════════
+//  9. تسجيل الدخول / الخروج
+// ══════════════════════════════════════════
+function hashStr(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return 'h' + Math.abs(h).toString(36) + s.length;
+}
+
+function hashPw(s) { return hashStr(s); }
+
+function loginFbUser() {
+  var u = document.getElementById('fbLoginUser').value.trim();
+  var p = document.getElementById('fbLoginPass').value;
+  if (!u || !p) { toast('❌ يرجى إدخال الاسم وكلمة المرور'); return; }
+  if (!_fbReady) { toast('❌ لا يوجد اتصال بـ Firebase الآن، حاول مرة أخرى'); return; }
+  var safe = u.replace(/[^\w\u0600-\u06FF]/g, '_');
+  var btn = document.getElementById('fbLoginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحقق...'; }
+
+  accountRef(safe).get().then(function(doc) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔓 دخول'; }
+    if (!doc.exists) {
+      toast('❌ اسم المستخدم "' + u + '" غير مسجل');
+      return;
+    }
+    var data = doc.data();
+    if (data.passwordHash !== hashStr(p)) {
+      toast('❌ كلمة المرور غير صحيحة');
+      return;
+    }
+    localStorage.setItem(FB_USER_KEY, safe);
+    localStorage.setItem(FB_PASS_KEY, p);
+    updateFbUserDisplay();
+    toast('✅ جاري تسجيل الدخول...');
+    // أعد تعيين S للاسترجاع من Firebase
+    S = { totalAnnual: 21, leaves: [], rests: [], lastModified: 0 };
+    setTimeout(startRealtimeListener, 300);
+  }).catch(function(err) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔓 دخول'; }
+    console.error('login check error:', err);
+    toast('❌ خطأ في الاتصال — حاول مرة أخرى');
+  });
+}
+
+function registerFbUser() {
+  var u  = document.getElementById('fbNewUser').value.trim();
+  var p  = document.getElementById('fbNewPass').value;
+  var pc = document.getElementById('fbNewPassConf').value;
+  if (!u || u.length < 2) { toast('❌ الاسم قصير جداً'); return; }
+  if (!p || p.length < 3) { toast('❌ كلمة المرور قصيرة جداً'); return; }
+  if (p !== pc) { toast('❌ كلمتا المرور غير متطابقتين'); return; }
+  if (!_fbReady) { toast('❌ لا يوجد اتصال بـ Firebase الآن، حاول مرة أخرى'); return; }
+  var safe = u.replace(/[^\w\u0600-\u06FF]/g, '_');
+  var btn = document.getElementById('fbRegisterBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإنشاء...'; }
+
+  accountRef(safe).get().then(function(doc) {
+    if (doc.exists) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ إنشاء حساب وربط'; }
+      toast('❌ اسم المستخدم "' + u + '" مستخدم بالفعل — اختر اسم آخر أو سجّل دخول');
+      return;
+    }
+    return accountRef(safe).set({
+      passwordHash: hashStr(p),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ إنشاء حساب وربط'; }
+      localStorage.setItem(FB_USER_KEY, safe);
+      localStorage.setItem(FB_PASS_KEY, p);
+      updateFbUserDisplay();
+      toast('✅ تم إنشاء الحساب — جاري الاتصال...');
+      S = { totalAnnual: 21, leaves: [], rests: [], lastModified: 0 };
+      setTimeout(startRealtimeListener, 300);
+    });
+  }).catch(function(err) {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ إنشاء حساب وربط'; }
+    console.error('register error:', err);
+    toast('❌ خطأ في الاتصال — حاول مرة أخرى');
+  });
+}
+
+function logoutFb() {
+  if (!confirm('هل تريد تسجيل الخروج؟ ستحتاج لاسمك وكلمة مرورك للدخول مجدداً.')) return;
+  stopRealtimeListener();
+  localStorage.removeItem(FB_USER_KEY);
+  localStorage.removeItem(FB_PASS_KEY);
+  S = { totalAnnual: 21, leaves: [], rests: [], lastModified: 0 };
+  render();
+  updateFbUserDisplay();
+  setDot('err', 'تم تسجيل الخروج');
+  setFbStatus('disconnected', 'غير متصل');
+  toast('👋 تم تسجيل الخروج');
+}
+
+// استرجاع بيانات من docId قديم (نظام قديم كان يخلط اسم المستخدم بكلمة المرور)
+// بيقرأ بيانات هذا الـ docId ويحطها في الحساب الحالي المسجّل دخول فيه
+function recoverOldData() {
+  var oldId = (document.getElementById('fbRecoverDocId').value || '').trim();
+  if (!oldId) { toast('❌ يرجى إدخال معرف المستند (Document ID)'); return; }
+  if (!_fbReady) { toast('❌ لا يوجد اتصال بـ Firebase الآن'); return; }
+  var currentDocId = getDocId();
+  if (!currentDocId) { toast('❌ سجّل الدخول أو أنشئ حسابك الجديد أولاً، ثم ارجع للاسترجاع'); return; }
+
+  toast('⏳ جاري البحث عن البيانات...');
+  yearRef(oldId, CURRENT_YEAR).get().then(function(doc) {
+    if (!doc.exists) {
+      toast('❌ لا توجد بيانات محفوظة بهذا المعرف لسنة ' + CURRENT_YEAR);
+      return;
+    }
+    var data = doc.data();
+    if (!confirm('تم العثور على بيانات (' + ((data.leaves||[]).length) + ' إجازة، ' + ((data.rests||[]).length) + ' بدل راحة). هل تريد نسخها إلى حسابك الحالي؟ سيتم استبدال بيانات سنة ' + CURRENT_YEAR + ' الحالية.')) return;
+    S.totalAnnual  = data.totalAnnual || 21;
+    S.leaves       = data.leaves || [];
+    S.rests        = data.rests  || [];
+    S.lastModified = Date.now();
+    document.getElementById('totalAnnual').value = S.totalAnnual;
+    render();
+    writeToFirebase(true);
+    toast('✅ تم استرجاع البيانات ونسخها لحسابك الحالي');
+  }).catch(function(err) {
+    console.error('recover error:', err);
+    toast('❌ خطأ أثناء البحث — تأكد من المعرف وحاول مرة أخرى');
+  });
+}
+
+function updateFbUserDisplay() {
+  var docId = getDocId();
+  var name  = getDisplayName();
+  var disp  = document.getElementById('fbUserDisplay');
+  var login = document.getElementById('fbLoginSection');
+  var nameEl = document.getElementById('fbUserName');
+  if (docId && name) {
+    if (disp)   disp.style.display  = 'block';
+    if (login)  login.style.display = 'none';
+    if (nameEl) nameEl.textContent  = name;
+  } else {
+    if (disp)   disp.style.display  = 'none';
+    if (login)  login.style.display = 'block';
+  }
+}
+
+// ══════════════════════════════════════════
+//  10. واجهة المستخدم — مؤشرات الحالة
+// ══════════════════════════════════════════
+function setDot(state, txt) {
+  var d = document.getElementById('syncDot');
+  var t = document.getElementById('syncTxt');
+  if (!d || !t) return;
+  d.className = 'sync-dot';
+  if (state === 'ok') d.classList.add('ok');
+  else if (state === 'busy') d.classList.add('busy');
+  t.textContent = txt;
+}
+
+function setFbStatus(state, txt) {
+  var pulse = document.getElementById('fbPulse');
+  var text  = document.getElementById('fbStatusText');
+  if (!pulse || !text) return;
+  pulse.className = 'fb-pulse';
+  if (state === 'connected') pulse.classList.add('connected');
+  else if (state === 'syncing') pulse.classList.add('syncing');
+  text.textContent = 'Firebase — ' + txt;
+}
+
+// ══════════════════════════════════════════
+//  11. كلمة مرور التطبيق
+// ══════════════════════════════════════════
+function checkPw() {
+  var val    = document.getElementById('pwInput').value;
+  var stored = localStorage.getItem(PW_KEY) || hashPw(DEFAULT_PW);
+  if (hashPw(val) === stored) {
+    document.getElementById('pwGate').style.display = 'none';
+    document.getElementById('pwError').style.display = 'none';
+    updateFbUserDisplay();
+    render();
+    // بدء الاستماع لـ Firebase
+    if (getDocId()) startRealtimeListener();
+    else { setDot('err', 'يرجى تسجيل الدخول من الإعدادات'); }
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+function lockApp() {
+  stopRealtimeListener();
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  document.getElementById('pwGate').style.display = 'flex';
+}
+
+function changePw() {
+  var oldVal  = document.getElementById('oldPw').value;
+  var newVal  = document.getElementById('newPw').value;
+  var confVal = document.getElementById('confirmPw').value;
+  var stored  = localStorage.getItem(PW_KEY) || hashPw(DEFAULT_PW);
+  if (hashPw(oldVal) !== stored) { toast('❌ كلمة المرور الحالية غير صحيحة'); return; }
+  if (!newVal || newVal.length < 3) { toast('❌ كلمة المرور الجديدة قصيرة جداً'); return; }
+  if (newVal !== confVal) { toast('❌ غير متطابقتين'); return; }
+  localStorage.setItem(PW_KEY, hashPw(newVal));
+  document.getElementById('oldPw').value = '';
+  document.getElementById('newPw').value = '';
+  document.getElementById('confirmPw').value = '';
+  toast('✅ تم تغيير كلمة المرور');
+  // أخفِ التلميح بعد تغيير كلمة المرور
+  var hint = document.getElementById('defaultPwHint'); if (hint) hint.style.display = 'none';
+}
+
+function togglePwVis(id, btn) {
+  var inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+// ══════════════════════════════════════════
+//  12. منطق الإجازات والبدلات
+// ══════════════════════════════════════════
+function addLeave() {
+  var date  = document.getElementById('lDate').value;
+  var type  = document.getElementById('lType').value;
+  var ref   = document.getElementById('lRestRef').value;
+  var days  = document.getElementById('lDays').value;
+  var shift = getSelectedShift();
+  if (!date) { toast('❌ يرجى اختيار التاريخ'); return; }
+  if (type === 'بدل راحة' && !ref) { toast('❌ لا يوجد بدل راحة متاح'); return; }
+  S.leaves.push({
+    id: Date.now(), date: date, type: type, days: days,
+    restRef: type === 'بدل راحة' ? ref : null,
+    shift: shift || null
+  });
+  saveData();
+  toast('✅ تم حفظ الإجازة');
+  document.querySelectorAll('#shiftChips .shift-chip, #shiftChips .shift-none-chip').forEach(function(c){ c.classList.remove('on'); });
+  document.querySelector('#shiftChips .shift-none-chip').classList.add('on');
+  go('home', document.querySelectorAll('.nav-btn')[0]);
+}
+
+function addRest() {
+  var date = document.getElementById('rDate').value;
+  if (!date) { toast('❌ يرجى اختيار التاريخ'); return; }
+  var vd = getValidDays();
+  S.rests.push({
+    id: Date.now(), date: date,
+    days: document.getElementById('rDays').value,
+    validDays: vd,
+    note: document.getElementById('rNote').value.trim()
+  });
+  saveData();
+  toast('✅ تم الحفظ — صالح ' + vd + ' يوم');
+  go('home', document.querySelectorAll('.nav-btn')[0]);
+}
+
+function delItem(cat, id) {
+  if (!confirm('هل أنت متأكد من الحذف؟')) return;
+  if (cat === 'L') S.leaves = S.leaves.filter(function(i){ return i.id !== id; });
+  else             S.rests  = S.rests.filter(function(i){ return i.id !== id; });
+  saveData();
+  toast('🗑️ تم الحذف');
+}
+
+function updateAnnual() {
+  S.totalAnnual = parseFloat(document.getElementById('totalAnnual').value) || 21;
+  saveData();
+  toast('✅ تم حفظ الرصيد السنوي');
+}
+
+// ══════════════════════════════════════════
+//  13. الرندر
+// ══════════════════════════════════════════
+var AM = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+var DN = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+function render() {
+  var taken = S.leaves.filter(function(l){ return l.type==='سنوي'; })
+    .reduce(function(s,l){ return s + parseFloat(l.days||0); }, 0);
+  document.getElementById('s-remaining').textContent = +(S.totalAnnual - taken).toFixed(1);
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var avail = S.rests.filter(function(r) {
+    var d = parseDate(r.date); if (!d) return false;
+    var diff = (today - d) / 86400000;
+    var mx = r.validDays || 30;
+    var used = S.leaves.some(function(l){ return l.restRef === r.date; });
+    return diff >= 0 && diff <= mx && !used;
+  });
+  document.getElementById('s-badal').textContent = +avail.reduce(function(s,r){ return s+parseFloat(r.days||0); },0).toFixed(1);
+
+  renderAvail(avail, today);
+  renderHistLeaves('hist-all-leaves', S.leaves.slice().sort(function(a,b){ return new Date(b.date)-new Date(a.date); }), today);
+
+  var restAvail = S.rests.filter(function(r){
+    var d=parseDate(r.date); if(!d) return false;
+    var diff=(today-d)/86400000; var mx=r.validDays||30;
+    return !S.leaves.some(function(l){return l.restRef===r.date;}) && diff>=0 && diff<=mx;
+  }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+
+  var restOther = S.rests.filter(function(r){
+    var d=parseDate(r.date); if(!d) return false;
+    var diff=(today-d)/86400000; var mx=r.validDays||30;
+    return S.leaves.some(function(l){return l.restRef===r.date;}) || diff<0 || diff>mx;
+  }).sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+
+  renderHistRests('hist-rest-avail', restAvail, today, false);
+  var usedTitle = document.getElementById('hist-rest-used-title');
+  if (usedTitle) usedTitle.style.display = restOther.length ? 'inline-block' : 'none';
+  renderHistRests('hist-rest-used', restOther, today, true);
+  renderMonthlyStats();
+}
+
+function parseDate(ds) {
+  if (!ds) return null;
+  var p = ds.split('-');
+  if (p.length < 3) return null;
+  return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+}
+
+function formatDateAr(ds) {
+  if (!ds) return '';
+  var p = ds.split('-'); if (p.length < 3) return ds;
+  var d = parseInt(p[2],10), m = parseInt(p[1],10)-1, y = p[0];
+  return '<span style="font-weight:900;font-size:0.9rem;color:var(--primary)">'+d+' '+AM[m]+'</span>' +
+         ' <span style="font-size:0.72rem;color:var(--muted)">'+DN[new Date(ds).getDay()]+' — '+y+'</span>';
+}
+
+function renderMonthlyStats() {
+  var grid = document.getElementById('monthStatsGrid'); if (!grid) return;
+  var monthly = {};
+  S.leaves.forEach(function(l) {
+    var m = l.date ? l.date.substring(0,7) : null; if (!m) return;
+    if (!monthly[m]) monthly[m] = { annual:0, badal:0 };
+    if (l.type==='سنوي') monthly[m].annual += parseFloat(l.days)||0;
+    else monthly[m].badal += parseFloat(l.days)||0;
+  });
+  var keys = Object.keys(monthly).sort().reverse();
+  if (!keys.length) { grid.innerHTML='<p style="color:var(--muted);font-size:0.78rem;">لا توجد بيانات بعد</p>'; return; }
+  grid.innerHTML = keys.map(function(m) {
+    var pt=m.split('-'); var mo=parseInt(pt[1],10); var s=monthly[m]; var total=s.annual+s.badal;
+    return '<div class="month-stat-row">' +
+      '<div class="month-stat-label">📅 '+AM[mo-1]+' '+pt[0]+'</div>' +
+      '<div class="month-stat-count">' +
+      (s.annual ? '<span class="month-count-badge mc-annual">سنوي: '+s.annual+'</span>' : '') +
+      (s.badal  ? '<span class="month-count-badge mc-badal">بدل: '+s.badal+'</span>'    : '') +
+      '<span class="month-count-badge mc-total">إجمالي: '+total+'</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderHistLeaves(id, items, today) {
+  var el = document.getElementById(id); if (!el) return;
+  if (!items.length) { el.innerHTML='<p style="padding:10px;color:var(--muted);font-size:0.8rem;">لا توجد إجازات</p>'; return; }
+  el.innerHTML = items.map(function(item) {
+    var isB = item.type==='بدل راحة';
+    var bc = isB ? '#38b2ac' : '#2B6CB0';
+    var icon = isB ? '🔄' : '🏖️';
+    var lbl = isB ? 'بدل راحة' : 'سنوية';
+    var lc = isB?'#22543d':'#1a365d'; var lb = isB?'#c6f6d5':'#bee3f8';
+    var sb = item.shift ? '<span class="badge pink">🌸 '+item.shift+'</span>' : '';
+    var rn = item.restRef ? '<span style="font-size:0.68rem;color:var(--muted);">📅 يوم عمل: '+item.restRef+'</span>' : '';
+    return '<div class="item-card" style="border-right-color:'+bc+';padding:12px 13px;">' +
+      '<div class="item-info">' +
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">' +
+      '<span>'+icon+'</span>' +
+      '<span style="background:'+lb+';color:'+lc+';font-size:0.65rem;font-weight:800;padding:2px 9px;border-radius:12px;">'+lbl+'</span>' +
+      sb+'</div>' +
+      '<div style="margin-bottom:3px;">'+formatDateAr(item.date)+'</div>' +
+      (rn?'<div style="margin-top:2px;">'+rn+'</div>':'')+
+      '</div>' +
+      '<div style="text-align:center;margin:0 8px;min-width:38px;">' +
+      '<div style="font-size:1.3rem;font-weight:900;color:var(--primary);">'+parseFloat(item.days||1)+'</div>' +
+      '<div style="font-size:0.6rem;color:var(--muted);">يوم</div>' +
+      '</div>' +
+      '<button class="del-btn" onclick="delItem(\'L\','+item.id+')">🗑️</button>' +
+      '</div>';
+  }).join('');
+}
+
+function renderHistRests(id, items, today, isOther) {
+  var el = document.getElementById(id); if (!el) return;
+  if (!items.length) { el.innerHTML='<p style="padding:10px;color:var(--muted);font-size:0.8rem;">'+(isOther?'لا توجد بدلات مستخدمة':'لا توجد بدلات متاحة')+'</p>'; return; }
+  el.innerHTML = items.map(function(r) {
+    var d=parseDate(r.date); var mx=r.validDays||30;
+    var diff = d ? (today-d)/86400000 : 0;
+    var rem = mx - Math.floor(diff);
+    var used = S.leaves.some(function(l){ return l.restRef===r.date; });
+    var badge = '';
+    if (used)      badge='<span class="badge gray">✔️ تم استخدامه</span>';
+    else if(rem<0) badge='<span class="badge red">❌ انتهت الصلاحية</span>';
+    else if(rem<=5)badge='<span class="badge yellow">⚠️ ينتهي خلال '+rem+' يوم</span>';
+    else           badge='<span class="badge green">✅ متاح — '+rem+' يوم</span>';
+    return '<div class="item-card" style="border-right-color:#38b2ac;padding:12px 13px;">' +
+      '<div class="item-info">' +
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">' +
+      '<span>🔄</span><span style="background:#e9d8fd;color:#44337a;font-size:0.65rem;font-weight:800;padding:2px 9px;border-radius:12px;">يوم عمل إضافي</span>' +
+      '</div>' +
+      '<div style="margin-bottom:4px;">'+formatDateAr(r.date)+'</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'+badge+(r.note?'<span style="font-size:0.68rem;color:var(--muted);">'+r.note+'</span>':'')+'</div>' +
+      '</div>' +
+      '<div style="text-align:center;margin:0 8px;min-width:38px;">' +
+      '<div style="font-size:1.3rem;font-weight:900;color:var(--primary);">'+parseFloat(r.days||1)+'</div>' +
+      '<div style="font-size:0.6rem;color:var(--muted);">يوم</div>' +
+      '</div>' +
+      '<button class="del-btn" onclick="delItem(\'R\','+r.id+')">🗑️</button>' +
+      '</div>';
+  }).join('');
+}
+
+function renderAvail(list, today) {
+  var sec = document.getElementById('availSection');
+  var ul  = document.getElementById('availList');
+  if (!list.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  ul.innerHTML = list.map(function(r) {
+    var d=parseDate(r.date); var mx=r.validDays||30;
+    var rem = d ? mx - Math.floor((today-d)/86400000) : mx;
+    return '<div class="item-card" style="border-right-color:#38b2ac">' +
+      '<div class="item-info"><div class="item-main">📅 '+r.date+'</div>' +
+      '<div class="item-sub">'+r.days+' يوم'+(r.note?' — '+r.note:'')+'</div>' +
+      '<span class="badge '+(rem<=5?'yellow':'green')+'">'+(rem<=5?'⚠️ ينتهي خلال '+rem+' يوم':'✅ متاح — '+rem+' يوم')+'</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  14. مساعدات الفورم
+// ══════════════════════════════════════════
+function toggleRestSel() {
+  var isR = document.getElementById('lType').value === 'بدل راحة';
+  document.getElementById('restSelGroup').style.display = isR ? 'block' : 'none';
+  if (isR) updateRestOpts();
+}
+
+function updateRestOpts() {
+  var lv = document.getElementById('lDate').value;
+  var sel = document.getElementById('lRestRef');
+  if (!lv) { sel.innerHTML = '<option>اختر تاريخ الإجازة أولاً</option>'; return; }
+  var ld = new Date(lv);
+  var valid = S.rests.filter(function(r) {
+    var d = parseDate(r.date); if (!d) return false;
+    var diff = (ld - d) / 86400000;
+    var mx = r.validDays || 30;
+    var used = S.leaves.some(function(l){ return l.restRef === r.date; });
+    return diff >= 0 && diff <= mx && !used;
+  });
+  sel.innerHTML = valid.length
+    ? valid.map(function(r){ return '<option value="'+r.date+'">'+r.date+' (صالح '+(r.validDays||30)+' يوم)</option>'; }).join('')
+    : '<option value="">لا توجد بدلات متاحة</option>';
+}
+
+function pickChip(el) {
+  document.querySelectorAll('#chips .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  document.getElementById('customRow').className = el.dataset.days==='0' ? 'custom-row show' : 'custom-row';
+}
+
+function getValidDays() {
+  var chip = document.querySelector('#chips .chip.on');
+  if (!chip) return 30;
+  if (chip.dataset.days==='0') return parseInt(document.getElementById('customDays').value)||30;
+  return parseInt(chip.dataset.days);
+}
+
+function pickShift(el) {
+  document.querySelectorAll('#shiftChips .shift-chip, #shiftChips .shift-none-chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+}
+
+function getSelectedShift() {
+  var el = document.querySelector('#shiftChips .on');
+  return el ? (el.dataset.val || '') : '';
+}
+
+// ══════════════════════════════════════════
+//  15. التنقل
+// ══════════════════════════════════════════
+function go(id, btn) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var pageId = ['add-leave','add-rest','history','settings'].indexOf(id) >= 0 ? id : 'home';
+  document.getElementById('page-'+pageId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+//  16. نسخ احتياطي محلي
+// ══════════════════════════════════════════
+function exportData() {
+  var a = document.createElement('a');
+  a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(S));
+  var now = new Date();
+  a.download = 'اجازات_' + CURRENT_YEAR + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + '.json';
+  a.click();
+  toast('📤 تم التصدير');
+}
+
+function importData(ev) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      parsed.lastModified = Date.now(); // مهم: يجعله أحدث من Firebase
+      S = parsed;
+      document.getElementById('totalAnnual').value = S.totalAnnual;
+      render();
+      toast('✅ تم الاستيراد — جاري الرفع إلى Firebase...');
+      setTimeout(function(){ writeToFirebase(true); }, 300);
+    } catch(ex) { toast('❌ خطأ في قراءة الملف'); }
+  };
+  r.readAsText(ev.target.files[0]);
+}
+
+// ══════════════════════════════════════════
+//  17. الأرشيف — واجهة
+// ══════════════════════════════════════════
+function updateHeaderYear() {
+  var el = document.getElementById('headerYearBadge');
+  if (el) el.textContent = '📅 سنة ' + CURRENT_YEAR;
+  var ab = document.getElementById('archiveBtnYear');
+  if (ab) ab.textContent = CURRENT_YEAR;
+}
+
+function openYearsModal() {
+  var arch  = getLocalArchive();
+  var years = Object.keys(arch).sort().reverse();
+  var tabs  = document.getElementById('yearTabList');
+  var view  = document.getElementById('yearDataView');
+  if (!years.length) {
+    tabs.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;">لا توجد سنوات مؤرشفة بعد.</p>';
+    view.innerHTML = '';
+  } else {
+    tabs.innerHTML = years.map(function(y,i){
+      return '<div class="year-tab'+(i===0?' active':'')+'" id="ytab-'+y+'" onclick="showYearData(\''+y+'\')">'+y+' <span class="archive-badge">أرشيف</span></div>';
+    }).join('');
+    showYearData(years[0]);
+  }
+  document.getElementById('newYearSection').style.display =
+    (S.leaves.length>0||S.rests.length>0) ? 'block' : 'none';
+  document.getElementById('yearsModal').classList.add('open');
+}
+
+function closeYearsModal() { document.getElementById('yearsModal').classList.remove('open'); }
+
+function showYearData(year) {
+  document.querySelectorAll('.year-tab').forEach(function(t){ t.classList.remove('active'); });
+  var tab = document.getElementById('ytab-'+year); if (tab) tab.classList.add('active');
+  var arch = getLocalArchive(); var data = arch[year];
+  if (!data) { document.getElementById('yearDataView').innerHTML=''; return; }
+  var annualTaken = (data.leaves||[]).filter(function(l){ return l.type==='سنوي'; })
+    .reduce(function(s,l){ return s+parseFloat(l.days||0); }, 0);
+  var remaining = (data.totalAnnual||0) - annualTaken;
+  var monthly = {};
+  (data.leaves||[]).forEach(function(l) {
+    var m = l.date ? l.date.substring(0,7) : null; if (!m) return;
+    if (!monthly[m]) monthly[m]={annual:0,badal:0};
+    if (l.type==='سنوي') monthly[m].annual+=parseFloat(l.days||0);
+    else monthly[m].badal+=parseFloat(l.days||0);
+  });
+  var mk = Object.keys(monthly).sort().reverse();
+  var mHtml = mk.length ? mk.map(function(m){
+    var pt=m.split('-'); var mo=parseInt(pt[1],10); var s=monthly[m];
+    return '<div class="month-stat-row"><div class="month-stat-label">📅 '+AM[mo-1]+' '+pt[0]+'</div>' +
+      '<div class="month-stat-count">' +
+      (s.annual?'<span class="month-count-badge mc-annual">سنوي: '+s.annual+'</span>':'')+
+      (s.badal?'<span class="month-count-badge mc-badal">بدل: '+s.badal+'</span>':'')+
+      '</div></div>';
+  }).join('') : '<p style="color:var(--muted);font-size:0.75rem;">لا توجد بيانات</p>';
+
+  document.getElementById('yearDataView').innerHTML =
+    '<div class="year-summary-grid">' +
+    '<div class="year-stat"><div class="year-stat-val">'+data.totalAnnual+'</div><div class="year-stat-lbl">الرصيد السنوي</div></div>' +
+    '<div class="year-stat" style="border-top-color:var(--danger)"><div class="year-stat-val">'+annualTaken+'</div><div class="year-stat-lbl">مأخوذ</div></div>' +
+    '<div class="year-stat" style="border-top-color:var(--success)"><div class="year-stat-val">'+Math.max(0,remaining).toFixed(1)+'</div><div class="year-stat-lbl">المتبقي</div></div>' +
+    '</div>' +
+    '<div style="font-weight:700;font-size:0.8rem;color:var(--primary);margin-bottom:8px;">📅 الإحصاء الشهري — '+year+'</div>' +
+    '<div class="month-stats-grid">'+mHtml+'</div>';
+}
+
+// ══════════════════════════════════════════
+//  18. Toast
+// ══════════════════════════════════════════
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.style.display='none'; }, 2800);
+}
+
+// ══════════════════════════════════════════
+//  19. التهيئة الرئيسية
+// ══════════════════════════════════════════
+function init() {
+  if (!localStorage.getItem(PW_KEY)) localStorage.setItem(PW_KEY, hashPw(DEFAULT_PW));
+  updateHeaderYear();
+  // إظهار التلميح لو كلمة المرور لسه افتراضية
+  (function(){ var s=localStorage.getItem(PW_KEY)||hashPw(DEFAULT_PW); var h=document.getElementById('defaultPwHint'); if(h) h.style.display=(s===hashPw(DEFAULT_PW))?'block':'none'; })();
+  updateFbUserDisplay();
+  initFirebase();
+  render();
+
+  // إعادة الاتصال عند العودة من الخلفية
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && getDocId() && _fbReady) {
+      if (!_unsubscribe) startRealtimeListener();
+    }
+  });
+}
+
+init();
+
+// ══════════════════════════════════════════
+//  20. PWA Service Worker
+// ══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  var swCode = [
+    'const CACHE="alsawah-fb-v1";',
+    'self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./"])).then(()=>self.skipWaiting()));});',
+    'self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});',
+    'self.addEventListener("fetch",e=>{',
+    '  if(e.request.url.includes("firestore.googleapis.com")||e.request.url.includes("googleapis.com")){',
+    '    e.respondWith(fetch(e.request).catch(()=>new Response("{}",{headers:{"Content-Type":"application/json"}})));return;',
+    '  }',
+    '  e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(res=>{',
+    '    if(res&&res.status===200){const cl=res.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}',
+    '    return res;',
+    '  }).catch(()=>cached)));',
+    '});'
+  ].join('\n');
+  var swBlob = new Blob([swCode], {type:'text/javascript'});
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(err){ console.log('SW:', err); });
+  });
+}
+</script>
+</body>
+</html>
